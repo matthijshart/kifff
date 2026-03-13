@@ -1388,25 +1388,42 @@ function switchTab(tab) {
 }
 
 // ── Demo Animation ──
+let demoHasRun = false;
+
 function initDemoAnimation() {
   const demoScreen = document.getElementById('demoScreen');
   if (!demoScreen) return;
 
+  // Check if already visible (above fold on desktop)
+  const rect = demoScreen.getBoundingClientRect();
+  const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+
+  if (isVisible) {
+    // Already in viewport — run after short delay for smooth start
+    setTimeout(() => {
+      if (!demoHasRun) runDemoAnimation();
+    }, 600);
+  }
+
+  // Also observe for scroll (in case it's below fold)
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-      if (entry.isIntersecting) {
+      if (entry.isIntersecting && !demoHasRun) {
         runDemoAnimation();
         observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.3 });
+  }, { threshold: 0.1 });
 
   observer.observe(demoScreen);
 }
 
 function runDemoAnimation() {
+  if (demoHasRun) return;
+  demoHasRun = true;
+
   const fills = document.querySelectorAll('[data-demo-step]');
-  const delays = [300, 700, 1100, 1400, 1800];
+  const delays = [400, 900, 1300, 1600, 2100];
 
   fills.forEach((fill, i) => {
     setTimeout(() => {
@@ -1417,16 +1434,18 @@ function runDemoAnimation() {
   // Show result after form fills
   setTimeout(() => {
     const result = document.getElementById('demoResult');
-    result.classList.add('visible');
-  }, 2400);
+    if (result) result.classList.add('visible');
+  }, 2600);
 
   setTimeout(() => {
-    document.getElementById('demoVerdictText').style.opacity = '1';
-  }, 2700);
+    const text = document.getElementById('demoVerdictText');
+    if (text) text.style.opacity = '1';
+  }, 2900);
 
   setTimeout(() => {
-    document.getElementById('demoVerdictFill').style.width = '35%';
-  }, 3000);
+    const fill = document.getElementById('demoVerdictFill');
+    if (fill) fill.style.width = '35%';
+  }, 3200);
 }
 
 // ── File Upload ──
