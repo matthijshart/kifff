@@ -636,8 +636,8 @@
   <h1>KIFID Predictor</h1>
 </div>
 <p class="subtitle">
-  Analyseer KIFID-uitspraken en voorspel of uitkering of procedure afwachten voordeliger is.
-  Upload uw uitsprakendata en voer casuskenmerken in voor een onderbouwde inschatting.
+  Analyseer 14.000+ openbare KIFID-uitspraken en voorspel of uitkering of procedure afwachten voordeliger is.
+  Gebaseerd op het volledige uitsprakenregister van <a href="https://www.kifid.nl/uitspraken/" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500;">kifid.nl</a>.
 </p>
 </header>
 
@@ -785,14 +785,61 @@
 
 <!-- TAB: Data -->
 <div id="tab-data" style="display:none;">
+
+<!-- KIFID Database Info -->
+<div class="panel" style="max-width: 800px; margin-bottom: 20px;">
+  <div class="panel-title">
+    <span class="icon">&#127981;</span>
+    KIFID Uitsprakenregister
+  </div>
+  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+    <div style="background:var(--accent-glow); border:1px solid rgba(59,130,246,0.15); border-radius:8px; padding:16px; text-align:center;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:700; color:var(--accent);">14.000+</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Openbare uitspraken</div>
+    </div>
+    <div style="background:var(--green-bg); border:1px solid rgba(22,163,74,0.12); border-radius:8px; padding:16px; text-align:center;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:700; color:var(--green);">2007-nu</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Periode beschikbaar</div>
+    </div>
+    <div style="background:var(--amber-bg); border:1px solid rgba(217,119,6,0.12); border-radius:8px; padding:16px; text-align:center;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:700; color:var(--amber);">Publiek</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Vrij toegankelijk</div>
+    </div>
+  </div>
+  <p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:16px;">
+    Alle KIFID-uitspraken worden openbaar gepubliceerd op
+    <a href="https://www.kifid.nl/uitspraken/" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:500;">kifid.nl/uitspraken</a>.
+    De uitspraken bevatten gestructureerde informatie: uitspraaknummer, commissieleden, type financieel product, feitenrelaas, verweer, beoordeling en dictum.
+  </p>
+
+  <!-- KIFID Uitspraak Lookup -->
+  <div style="display:flex; gap:10px; margin-bottom:12px;">
+    <input type="text" id="kifidLookup" placeholder="Zoek op uitspraaknummer, bijv. 2024-1029" style="flex:1;">
+    <button class="btn-predict" onclick="lookupKifid()" style="width:auto; margin-top:0; padding:11px 20px; font-size:13px;">
+      Opzoeken
+    </button>
+  </div>
+  <div id="kifidLookupResult"></div>
+
+  <div style="margin-top:16px; padding:12px 16px; background:var(--bg-input); border-radius:8px; border:1px solid var(--border);">
+    <p style="font-size:12px; color:var(--text-dim); line-height:1.6;">
+      <strong style="color:var(--text-muted);">Databronnen voor je predictor:</strong><br>
+      1. Upload eigen CSV/JSON exports van KIFID-uitspraken<br>
+      2. Gebruik de demo-dataset (12 voorbeelduitspraken)<br>
+      3. Koppel later een scraper/API voor automatisch ophalen van alle 14.000+ uitspraken
+    </p>
+  </div>
+</div>
+
+<!-- Upload Panel -->
 <div class="panel" style="max-width: 800px;">
   <div class="panel-title">
     <span class="icon">&#128193;</span>
-    Uitsprakendata beheren
+    Uitsprakendata uploaden
   </div>
 
   <div id="dataStatus" class="data-status empty">
-    Nog geen data geladen. Upload KIFID-uitspraken om te beginnen.
+    Nog geen data geladen. Upload KIFID-uitspraken of laad de demo-dataset.
   </div>
 
   <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
@@ -819,9 +866,9 @@
 
   <div id="uploadedFiles" style="margin-top: 20px;"></div>
 
-  <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
-    <button class="btn-predict" onclick="loadDemoData()" style="background: var(--bg-input); color: var(--text); border: 1px solid var(--border);">
-      Demo-data laden (voorbeelduitspraken)
+  <div style="display:flex; gap:12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
+    <button class="btn-predict" onclick="loadDemoData()" style="flex:1; background: var(--bg-input); color: var(--text); border: 1px solid var(--border);">
+      Demo-data laden (12 uitspraken)
     </button>
   </div>
 </div>
@@ -1181,6 +1228,51 @@ function updateInsights() {
       <li><span>Geen coulanceaanbod gedaan</span><span class="factor-tag neutral">middel</span></li>
       <li><span>Hoog gevorderd bedrag (>50k)</span><span class="factor-tag neutral">middel</span></li>
     </ul>`;
+}
+
+// ── KIFID Lookup ──
+function lookupKifid() {
+  const nr = document.getElementById('kifidLookup').value.trim();
+  const resultEl = document.getElementById('kifidLookupResult');
+
+  if (!nr) {
+    resultEl.innerHTML = '<p style="font-size:13px;color:var(--amber);">Voer een uitspraaknummer in.</p>';
+    return;
+  }
+
+  // Check local data first
+  const local = uitspraken.find(u => u.uitspraaknr === nr);
+  if (local) {
+    resultEl.innerHTML = `
+      <div style="padding:12px 16px;background:var(--green-bg);border:1px solid rgba(22,163,74,0.15);border-radius:8px;margin-top:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent);font-weight:600;">${local.uitspraaknr}</span>
+          <span class="case-outcome ${local.uitkomst}" style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 10px;border-radius:4px;font-weight:500;">${local.uitkomst}</span>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.5;">${local.samenvatting}</p>
+        <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--text-dim);">
+          <span>Type: ${local.type_verzekering}</span>
+          <span>Gevorderd: \u20AC${Number(local.bedrag_gevorderd).toLocaleString('nl-NL')}</span>
+          <span>Toegewezen: \u20AC${Number(local.bedrag_toegewezen).toLocaleString('nl-NL')}</span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Not in local data — link to KIFID website
+  const kifidUrl = 'https://www.kifid.nl/uitspraken/';
+  resultEl.innerHTML = `
+    <div style="padding:12px 16px;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;margin-top:8px;">
+      <p style="font-size:13px;color:var(--text-muted);">
+        Uitspraak <strong>${nr}</strong> niet gevonden in lokale data (${uitspraken.length} uitspraken geladen).
+      </p>
+      <p style="font-size:13px;color:var(--text-muted);margin-top:6px;">
+        Zoek direct op KIFID:
+        <a href="${kifidUrl}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500;">
+          kifid.nl/uitspraken
+        </a>
+      </p>
+    </div>`;
 }
 
 // ── Drag & Drop ──
