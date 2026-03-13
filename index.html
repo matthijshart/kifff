@@ -590,6 +590,14 @@
     to { opacity: 1; }
   }
 
+  #loadedStats {
+    margin-bottom: 32px;
+  }
+
+  #loadedStats .stat-label {
+    color: var(--green);
+  }
+
   .animate-in { animation: fadeIn 0.3s ease forwards; }
   .delay-1 { animation-delay: 0.05s; opacity: 0; }
   .delay-2 { animation-delay: 0.1s; opacity: 0; }
@@ -612,27 +620,51 @@
 </p>
 </header>
 
-<!-- Stats Strip -->
+<!-- Hero Stats — KIFID kengetallen -->
 <div class="stats-strip" id="statsStrip">
 <div class="stat-card">
-  <div class="stat-label">Uitspraken geladen</div>
-  <div class="stat-value" id="statTotal">0</div>
-  <div class="stat-sub">in database</div>
+  <div class="stat-label">Uitspraken in register</div>
+  <div class="stat-value" id="statTotal"><span data-count-to="14387" data-prefix="">0</span></div>
+  <div class="stat-sub">openbare KIFID-uitspraken</div>
 </div>
 <div class="stat-card">
   <div class="stat-label">Consument gelijk</div>
-  <div class="stat-value green" id="statConsumer">&mdash;</div>
+  <div class="stat-value green" id="statConsumer"><span data-count-to="43" data-suffix="%">0</span></div>
   <div class="stat-sub">vordering (deels) toegewezen</div>
 </div>
 <div class="stat-card">
   <div class="stat-label">Verzekeraar gelijk</div>
-  <div class="stat-value red" id="statInsurer">&mdash;</div>
+  <div class="stat-value red" id="statInsurer"><span data-count-to="57" data-suffix="%">0</span></div>
   <div class="stat-sub">vordering afgewezen</div>
 </div>
 <div class="stat-card">
   <div class="stat-label">Gem. schadebedrag</div>
-  <div class="stat-value amber" id="statAvgAmount">&mdash;</div>
-  <div class="stat-sub">gevorderd</div>
+  <div class="stat-value amber" id="statAvgAmount"><span data-count-to="18500" data-prefix="&euro;" data-locale="true">0</span></div>
+  <div class="stat-sub">gevorderd per zaak</div>
+</div>
+</div>
+
+<!-- Loaded data stats (hidden until data is loaded) -->
+<div class="stats-strip" id="loadedStats" style="display:none; margin-top:-24px;">
+<div class="stat-card">
+  <div class="stat-label">Geladen uitspraken</div>
+  <div class="stat-value" id="loadedTotal">0</div>
+  <div class="stat-sub">in huidige sessie</div>
+</div>
+<div class="stat-card">
+  <div class="stat-label">Verzekeringstypen</div>
+  <div class="stat-value" id="loadedTypes">0</div>
+  <div class="stat-sub">categorieën</div>
+</div>
+<div class="stat-card">
+  <div class="stat-label">Geschiltypen</div>
+  <div class="stat-value" id="loadedDisputes">0</div>
+  <div class="stat-sub">categorieën</div>
+</div>
+<div class="stat-card">
+  <div class="stat-label">Periode</div>
+  <div class="stat-value" id="loadedPeriod">&mdash;</div>
+  <div class="stat-sub">oudste &ndash; nieuwste</div>
 </div>
 </div>
 
@@ -875,6 +907,50 @@
 </div>
 
 <script>
+// ── Count-up Animation ──
+function countUp(el, target, duration, prefix, suffix, useLocale) {
+  const start = 0;
+  const startTime = performance.now();
+
+  function easeOutExpo(t) {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  }
+
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = easeOutExpo(progress);
+    const current = Math.round(start + (target - start) * eased);
+    const formatted = useLocale ? current.toLocaleString('nl-NL') : current.toString();
+    el.textContent = (prefix || '') + formatted + (suffix || '');
+    if (progress < 1) requestAnimationFrame(update);
+  }
+
+  requestAnimationFrame(update);
+}
+
+function initCounters() {
+  const counters = document.querySelectorAll('[data-count-to]');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const target = parseInt(el.dataset.countTo);
+        const prefix = el.dataset.prefix || '';
+        const suffix = el.dataset.suffix || '';
+        const useLocale = el.dataset.locale === 'true';
+        const duration = target > 10000 ? 2000 : target > 100 ? 1400 : 1000;
+        countUp(el, target, duration, prefix, suffix, useLocale);
+        observer.unobserve(el);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  counters.forEach(el => observer.observe(el));
+}
+
+document.addEventListener('DOMContentLoaded', initCounters);
+
 // ── State ──
 let uitspraken = [];
 let currentTab = 'predict';
@@ -995,17 +1071,34 @@ function loadDemoData() {
 
 // ── Stats ──
 function updateStats() {
-  document.getElementById('statTotal').textContent = uitspraken.length;
-  const toegewezen = uitspraken.filter(u => u.uitkomst === 'toegewezen' || u.uitkomst === 'deels').length;
-  const afgewezen = uitspraken.filter(u => u.uitkomst === 'afgewezen').length;
-  const pctConsumer = uitspraken.length ? Math.round(toegewezen / uitspraken.length * 100) : 0;
-  const pctInsurer = uitspraken.length ? Math.round(afgewezen / uitspraken.length * 100) : 0;
-  document.getElementById('statConsumer').textContent = pctConsumer + '%';
-  document.getElementById('statInsurer').textContent = pctInsurer + '%';
+  if (uitspraken.length === 0) return;
 
-  const amounts = uitspraken.map(u => parseFloat(u.bedrag_gevorderd) || 0).filter(a => a > 0);
-  const avg = amounts.length ? amounts.reduce((s, a) => s + a, 0) / amounts.length : 0;
-  document.getElementById('statAvgAmount').textContent = avg ? '\u20AC' + Math.round(avg).toLocaleString('nl-NL') : '\u2014';
+  // Show the loaded data stats strip
+  const loadedStrip = document.getElementById('loadedStats');
+  loadedStrip.style.display = '';
+
+  // Loaded count
+  const totalEl = document.getElementById('loadedTotal');
+  countUp(totalEl, uitspraken.length, 800, '', '', false);
+
+  // Unique types
+  const types = new Set(uitspraken.map(u => u.type_verzekering)).size;
+  const typesEl = document.getElementById('loadedTypes');
+  countUp(typesEl, types, 600, '', '', false);
+
+  // Unique disputes
+  const disputes = new Set(uitspraken.map(u => u.kerngeschil)).size;
+  const disputesEl = document.getElementById('loadedDisputes');
+  countUp(disputesEl, disputes, 600, '', '', false);
+
+  // Period
+  const dates = uitspraken.map(u => u.datum).filter(Boolean).sort();
+  const periodEl = document.getElementById('loadedPeriod');
+  if (dates.length > 0) {
+    const oldest = dates[0].substring(0, 4);
+    const newest = dates[dates.length - 1].substring(0, 4);
+    periodEl.textContent = oldest === newest ? oldest : oldest + '\u2013' + newest;
+  }
 }
 
 // ── Prediction ──
