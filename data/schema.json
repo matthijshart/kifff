@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KIFID Uitspraak",
+  "description": "Gestructureerde KIFID-uitspraak voor de Insurance Claim Predictor",
+  "type": "object",
+  "required": ["uitspraaknr", "datum", "type_verzekering", "kerngeschil", "uitkomst"],
+  "properties": {
+    "uitspraaknr": {
+      "type": "string",
+      "description": "Uniek uitspraaknummer, bijv. '2024-1029'",
+      "pattern": "^\\d{4}-\\d{3,4}$"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum van de uitspraak (YYYY-MM-DD)"
+    },
+    "type_verzekering": {
+      "type": "string",
+      "enum": [
+        "autoverzekering",
+        "woonhuisverzekering",
+        "inboedelverzekering",
+        "reisverzekering",
+        "aansprakelijkheidsverzekering",
+        "rechtsbijstandverzekering",
+        "levensverzekering",
+        "arbeidsongeschiktheidsverzekering",
+        "zorgverzekering",
+        "beleggingsverzekering",
+        "overlijdensrisicoverzekering",
+        "opstalverzekering",
+        "bromfietsverzekering",
+        "brandverzekering",
+        "transportverzekering",
+        "overig"
+      ]
+    },
+    "kerngeschil": {
+      "type": "string",
+      "enum": [
+        "dekkingsweigering",
+        "uitleg_voorwaarden",
+        "schadevaststelling",
+        "premiegeschil",
+        "mededelingsplicht",
+        "opzegging",
+        "zorgplicht",
+        "informatievoorziening",
+        "clausule",
+        "vertraging",
+        "fraude",
+        "eigen_gebrek",
+        "overig"
+      ]
+    },
+    "uitkomst": {
+      "type": "string",
+      "enum": ["toegewezen", "afgewezen", "deels"],
+      "description": "toegewezen = consument gelijk, afgewezen = verzekeraar gelijk, deels = gedeeltelijk"
+    },
+    "bedrag_gevorderd": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Door consument gevorderd bedrag in euro's"
+    },
+    "bedrag_toegewezen": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Door commissie toegewezen bedrag in euro's"
+    },
+    "bindend": {
+      "type": "boolean",
+      "description": "true = bindend advies, false = niet-bindend advies"
+    },
+    "commissie": {
+      "type": "string",
+      "enum": ["geschillencommissie", "commissie_van_beroep"],
+      "description": "Welke commissie de uitspraak heeft gedaan"
+    },
+    "verzekeraar": {
+      "type": "string",
+      "description": "Naam van de verzekeraar (geanonimiseerd in uitspraak, soms wel bekend)"
+    },
+    "samenvatting": {
+      "type": "string",
+      "description": "Korte samenvatting van de casus en het oordeel"
+    },
+    "argumenten_consument": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Kernargumenten van de consument"
+    },
+    "argumenten_verzekeraar": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Kernargumenten/verweer van de verzekeraar"
+    },
+    "juridische_grondslag": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Relevante wetsartikelen, polisvoorwaarden, jurisprudentie",
+      "examples": ["art. 7:928 BW (mededelingsplicht)", "contra proferentem", "art. 6:248 BW (R&B)"]
+    },
+    "beslisfactoren": {
+      "type": "object",
+      "description": "Factoren die de uitkomst bepaalden",
+      "properties": {
+        "bewijs_consument": {
+          "type": "string",
+          "enum": ["sterk", "gemiddeld", "zwak", "geen"]
+        },
+        "deskundigenrapport": {
+          "type": "string",
+          "enum": ["geen", "consument", "verzekeraar", "beide", "onafhankelijk"]
+        },
+        "coulance_aangeboden": {
+          "type": "boolean"
+        },
+        "polisvoorwaarden_duidelijk": {
+          "type": "boolean",
+          "description": "Waren de polisvoorwaarden duidelijk geformuleerd?"
+        },
+        "consument_nalatig": {
+          "type": "boolean",
+          "description": "Was er nalatigheid aan de kant van de consument?"
+        },
+        "verzekeraar_informatieplicht_geschonden": {
+          "type": "boolean"
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Vrije tags voor extra categorisatie",
+      "examples": ["woekerpolis", "stormschade", "whiplash", "crypto"]
+    },
+    "bron_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Link naar de originele uitspraak op kifid.nl"
+    }
+  }
+}
