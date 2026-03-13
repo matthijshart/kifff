@@ -1,1 +1,1200 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KIFID Predictor — Uitspraakanalyse voor Verzekeraars</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f5f9;
+    --bg-input: #f1f5f9;
+    --border: #e2e8f0;
+    --border-focus: #3b82f6;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --accent: #3b82f6;
+    --accent-glow: rgba(59, 130, 246, 0.1);
+    --green: #16a34a;
+    --green-bg: rgba(22, 163, 74, 0.08);
+    --red: #dc2626;
+    --red-bg: rgba(220, 38, 38, 0.06);
+    --amber: #d97706;
+    --amber-bg: rgba(217, 119, 6, 0.07);
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,0.08);
+  }
 
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  /* ── Header ── */
+  .header {
+    margin-bottom: 48px;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+
+  .logo-mark {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, var(--accent), #6366f1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.5;
+    max-width: 640px;
+  }
+
+  /* ── Stats Strip ── */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .stat-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .stat-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.amber { color: var(--amber); }
+
+  .stat-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* ── Main Grid ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* ── Input Panel ── */
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .panel-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+  }
+
+  .panel-title .icon {
+    width: 20px;
+    height: 20px;
+    background: var(--accent-glow);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+
+  .field {
+    margin-bottom: 20px;
+  }
+
+  .field:last-child {
+    margin-bottom: 0;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  select, input[type="text"], input[type="number"], textarea {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  select:focus, input:focus, textarea:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.5;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .btn-predict {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), #6366f1);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    margin-top: 8px;
+    letter-spacing: 0.2px;
+  }
+
+  .btn-predict:hover { opacity: 0.9; }
+  .btn-predict:active { transform: scale(0.98); }
+
+  .btn-predict:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ── Results Panel ── */
+  .results-area {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .result-hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--green), var(--amber));
+  }
+
+  .result-hero.empty {
+    padding: 80px 32px;
+  }
+
+  .empty-state {
+    color: var(--text-dim);
+    font-size: 15px;
+  }
+
+  .empty-state .icon-big {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  .verdict-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .verdict-text {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .verdict-text.uitkeren { color: var(--green); }
+  .verdict-text.afwachten { color: var(--amber); }
+  .verdict-text.onzeker { color: var(--text-muted); }
+
+  .confidence-bar-wrap {
+    max-width: 320px;
+    margin: 20px auto 0;
+  }
+
+  .confidence-bar {
+    height: 8px;
+    background: var(--bg-input);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .confidence-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s ease;
+  }
+
+  .confidence-fill.green { background: var(--green); }
+  .confidence-fill.amber { background: var(--amber); }
+  .confidence-fill.red { background: var(--red); }
+
+  .confidence-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── Analysis Cards ── */
+  .analysis-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .analysis-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .analysis-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+  }
+
+  .analysis-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .factor-list {
+    list-style: none;
+  }
+
+  .factor-list li {
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .factor-list li:last-child { border: none; }
+
+  .factor-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .factor-tag.pro { background: var(--green-bg); color: var(--green); }
+  .factor-tag.con { background: var(--red-bg); color: var(--red); }
+  .factor-tag.neutral { background: var(--amber-bg); color: var(--amber); }
+
+  /* ── Similar Cases ── */
+  .similar-cases {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .similar-cases h3 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    color: var(--text);
+  }
+
+  .case-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .case-row:last-child { border: none; }
+
+  .case-nr {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .case-desc {
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .case-outcome {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .case-outcome.toegewezen { background: var(--green-bg); color: var(--green); }
+  .case-outcome.afgewezen { background: var(--red-bg); color: var(--red); }
+  .case-outcome.deels { background: var(--amber-bg); color: var(--amber); }
+
+  .case-relevance {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* ── Loading ── */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 60px 0;
+  }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+
+  /* ── Tab Bar ── */
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 24px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: var(--bg-card);
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .tab-btn:hover:not(.active) {
+    color: var(--text-muted);
+    background: rgba(0,0,0,0.02);
+  }
+
+  /* ── Upload Section ── */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 20px;
+  }
+
+  .upload-zone:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  .upload-zone .icon-upload {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+
+  .upload-zone p {
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .upload-zone .formats {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  .data-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--green-bg);
+    border: 1px solid rgba(22, 163, 74, 0.15);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--green);
+    margin-bottom: 16px;
+  }
+
+  .data-status.empty {
+    background: var(--amber-bg);
+    border-color: rgba(217, 119, 6, 0.15);
+    color: var(--amber);
+  }
+
+  /* ── Code blocks ── */
+  code {
+    background: var(--bg-input);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .stats-strip { grid-template-columns: repeat(2, 1fr); }
+    .analysis-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Animation ── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-in {
+    animation: fadeInUp 0.4s ease forwards;
+  }
+
+  .delay-1 { animation-delay: 0.1s; opacity: 0; }
+  .delay-2 { animation-delay: 0.2s; opacity: 0; }
+  .delay-3 { animation-delay: 0.3s; opacity: 0; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- Header -->
+<header class="header">
+<div class="header-top">
+  <div class="logo-mark">KP</div>
+  <h1>KIFID Predictor</h1>
+</div>
+<p class="subtitle">
+  Analyseer KIFID-uitspraken en voorspel of uitkering of procedure afwachten voordeliger is.
+  Upload uw uitsprakendata en voer casuskenmerken in voor een onderbouwde inschatting.
+</p>
+</header>
+
+<!-- Stats Strip -->
+<div class="stats-strip" id="statsStrip">
+<div class="stat-card">
+  <div class="stat-label">Uitspraken geladen</div>
+  <div class="stat-value" id="statTotal">0</div>
+  <div class="stat-sub">in database</div>
+</div>
+<div class="stat-card">
+  <div class="stat-label">Consument gelijk</div>
+  <div class="stat-value green" id="statConsumer">&mdash;</div>
+  <div class="stat-sub">vordering (deels) toegewezen</div>
+</div>
+<div class="stat-card">
+  <div class="stat-label">Verzekeraar gelijk</div>
+  <div class="stat-value red" id="statInsurer">&mdash;</div>
+  <div class="stat-sub">vordering afgewezen</div>
+</div>
+<div class="stat-card">
+  <div class="stat-label">Gem. schadebedrag</div>
+  <div class="stat-value amber" id="statAvgAmount">&mdash;</div>
+  <div class="stat-sub">gevorderd</div>
+</div>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+<button class="tab-btn active" onclick="switchTab('predict')">Predictie</button>
+<button class="tab-btn" onclick="switchTab('data')">Data &amp; Upload</button>
+<button class="tab-btn" onclick="switchTab('insights')">Inzichten</button>
+</div>
+
+<!-- TAB: Predict -->
+<div id="tab-predict" class="main-grid">
+
+<!-- Input Panel -->
+<div class="panel">
+  <div class="panel-title">
+    <span class="icon">&#9881;</span>
+    Casuskenmerken invoeren
+  </div>
+
+  <div class="field">
+    <label>Type verzekering</label>
+    <select id="insuranceType">
+      <option value="">— Selecteer —</option>
+      <option value="autoverzekering">Autoverzekering</option>
+      <option value="woonhuisverzekering">Woonhuisverzekering</option>
+      <option value="inboedelverzekering">Inboedelverzekering</option>
+      <option value="reisverzekering">Reisverzekering</option>
+      <option value="aansprakelijkheidsverzekering">Aansprakelijkheidsverzekering</option>
+      <option value="rechtsbijstandverzekering">Rechtsbijstandverzekering</option>
+      <option value="levensverzekering">Levensverzekering</option>
+      <option value="arbeidsongeschiktheidsverzekering">Arbeidsongeschiktheidsverzekering</option>
+      <option value="zorgverzekering">Zorgverzekering</option>
+      <option value="beleggingsverzekering">Beleggingsverzekering</option>
+      <option value="overlijdensrisicoverzekering">Overlijdensrisicoverzekering</option>
+      <option value="overig">Overig</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Kerngeschil</label>
+    <select id="coreDispute">
+      <option value="">— Selecteer —</option>
+      <option value="dekkingsweigering">Dekkingsweigering</option>
+      <option value="uitleg_voorwaarden">Uitleg polisvoorwaarden</option>
+      <option value="schadevaststelling">Schadevaststelling / schadehoogte</option>
+      <option value="premiegeschil">Premiegeschil</option>
+      <option value="mededelingsplicht">Schending mededelingsplicht</option>
+      <option value="opzegging">Opzegging verzekering</option>
+      <option value="zorgplicht">Schending zorgplicht</option>
+      <option value="informatievoorziening">Gebrekkige informatievoorziening</option>
+      <option value="clausule">Beroep op uitsluiting/clausule</option>
+      <option value="vertraging">Vertraging afhandeling</option>
+      <option value="overig">Overig</option>
+    </select>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Gevorderd bedrag (&euro;)</label>
+      <input type="number" id="claimAmount" placeholder="bijv. 15000">
+    </div>
+    <div class="field">
+      <label>Bindend advies?</label>
+      <select id="bindingAdvice">
+        <option value="bindend">Ja, bindend</option>
+        <option value="niet-bindend">Nee, niet-bindend</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Heeft de consument bewijs aangeleverd?</label>
+    <select id="consumerEvidence">
+      <option value="">— Selecteer —</option>
+      <option value="sterk">Sterk (foto's, rapporten, getuigen)</option>
+      <option value="gemiddeld">Gemiddeld (eigen verklaring + enig bewijs)</option>
+      <option value="zwak">Zwak (alleen eigen verklaring)</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Is er een deskundigenrapport?</label>
+    <select id="expertReport">
+      <option value="geen">Geen rapport</option>
+      <option value="consument">Ja, ingebracht door consument</option>
+      <option value="verzekeraar">Ja, ingebracht door verzekeraar</option>
+      <option value="beide">Beide partijen</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Heeft verzekeraar coulanceaanbod gedaan?</label>
+    <select id="goodwillOffer">
+      <option value="nee">Nee</option>
+      <option value="ja_laag">Ja, laag bedrag</option>
+      <option value="ja_redelijk">Ja, redelijk bedrag</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Aanvullende context (optioneel)</label>
+    <textarea id="additionalContext" placeholder="Beschrijf relevante details: bijv. consument beroept zich op redelijkheid en billijkheid, verzekeraar beroept zich op uitsluiting in art. 5.3 voorwaarden..."></textarea>
+  </div>
+
+  <button class="btn-predict" id="btnPredict" onclick="runPrediction()">
+    Analyseer &amp; Voorspel
+  </button>
+</div>
+
+<!-- Results -->
+<div class="results-area" id="resultsArea">
+  <div class="result-hero empty">
+    <div class="empty-state">
+      <div class="icon-big">&#9878;&#65039;</div>
+      <p>Vul de casuskenmerken in en klik op <strong>Analyseer &amp; Voorspel</strong><br>voor een onderbouwde inschatting.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- TAB: Data -->
+<div id="tab-data" style="display:none;">
+<div class="panel" style="max-width: 800px;">
+  <div class="panel-title">
+    <span class="icon">&#128193;</span>
+    Uitsprakendata beheren
+  </div>
+
+  <div id="dataStatus" class="data-status empty">
+    Nog geen data geladen. Upload KIFID-uitspraken om te beginnen.
+  </div>
+
+  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+    <div class="icon-upload">&#128196;</div>
+    <p><strong>Klik om bestanden te uploaden</strong> of sleep ze hierheen</p>
+    <p class="formats">CSV, JSON, of PDF-bestanden van KIFID-uitspraken</p>
+  </div>
+  <input type="file" id="fileInput" multiple accept=".csv,.json,.pdf" style="display:none" onchange="handleFileUpload(event)">
+
+  <div style="margin-top: 20px;">
+    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.7;">
+      <strong>Verwacht formaat (CSV/JSON):</strong><br>
+      Elke uitspraak als rij/object met velden: <code>uitspraaknr</code>,
+      <code>datum</code>,
+      <code>type_verzekering</code>,
+      <code>kerngeschil</code>,
+      <code>uitkomst</code> (toegewezen / afgewezen / deels),
+      <code>bedrag_gevorderd</code>,
+      <code>bedrag_toegewezen</code>,
+      <code>bindend</code>,
+      <code>samenvatting</code>
+    </p>
+  </div>
+
+  <div id="uploadedFiles" style="margin-top: 20px;"></div>
+
+  <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
+    <button class="btn-predict" onclick="loadDemoData()" style="background: var(--bg-input); color: var(--text); border: 1px solid var(--border);">
+      Demo-data laden (voorbeelduitspraken)
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- TAB: Insights -->
+<div id="tab-insights" style="display:none;">
+<div class="analysis-grid" id="insightsGrid">
+  <div class="analysis-card" style="grid-column: span 2;">
+    <h3>Uitkomstverdeling per verzekeringstype</h3>
+    <div id="insightChart" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
+      <p style="color: var(--text-dim); font-size: 13px;">Laad eerst uitsprakendata via het Data-tabblad.</p>
+    </div>
+  </div>
+  <div class="analysis-card">
+    <h3>Sterkste voorspellers</h3>
+    <div id="insightPredictors">
+      <p style="color: var(--text-dim); font-size: 13px;">Beschikbaar na data-upload.</p>
+    </div>
+  </div>
+  <div class="analysis-card">
+    <h3>Risicofactoren voor verzekeraar</h3>
+    <div id="insightRisks">
+      <p style="color: var(--text-dim); font-size: 13px;">Beschikbaar na data-upload.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+
+<script>
+// ── State ──
+let uitspraken = [];
+let currentTab = 'predict';
+
+// ── Tab Switching ──
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', ['predict','data','insights'][i] === tab);
+  });
+  document.getElementById('tab-predict').style.display = tab === 'predict' ? 'grid' : 'none';
+  document.getElementById('tab-data').style.display = tab === 'data' ? 'block' : 'none';
+  document.getElementById('tab-insights').style.display = tab === 'insights' ? 'block' : 'none';
+}
+
+// ── File Upload ──
+function handleFileUpload(event) {
+  const files = event.target.files;
+  for (const file of files) {
+    if (file.name.endsWith('.csv')) {
+      readCSV(file);
+    } else if (file.name.endsWith('.json')) {
+      readJSON(file);
+    } else {
+      alert('PDF-parsing wordt in Claude Code uitgewerkt. Upload CSV of JSON.');
+    }
+  }
+}
+
+function readCSV(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const lines = e.target.result.split('\n');
+    const headers = lines[0].split(/[,;]/).map(h => h.trim().toLowerCase());
+    for (let i = 1; i < lines.length; i++) {
+      const vals = lines[i].split(/[,;]/);
+      if (vals.length < 3) continue;
+      const row = {};
+      headers.forEach((h, j) => row[h] = vals[j]?.trim());
+      uitspraken.push(row);
+    }
+    updateStats();
+    showUploadSuccess(file.name, lines.length - 1);
+  };
+  reader.readAsText(file);
+}
+
+function readJSON(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const items = Array.isArray(data) ? data : data.uitspraken || [];
+      uitspraken.push(...items);
+      updateStats();
+      showUploadSuccess(file.name, items.length);
+    } catch (err) {
+      alert('Fout bij lezen JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function showUploadSuccess(name, count) {
+  const el = document.getElementById('uploadedFiles');
+  el.innerHTML += `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--green-bg);border:1px solid rgba(22,163,74,0.15);border-radius:6px;font-size:13px;color:var(--green);margin-bottom:8px;">
+      ${name} — ${count} uitspraken geladen
+    </div>`;
+  document.getElementById('dataStatus').className = 'data-status';
+  document.getElementById('dataStatus').innerHTML = `${uitspraken.length} uitspraken geladen en klaar voor analyse.`;
+}
+
+// ── Demo Data ──
+function loadDemoData() {
+  uitspraken = [
+    { uitspraaknr: "2024-0500", datum: "2024-06-15", type_verzekering: "autoverzekering", kerngeschil: "schadevrije_jaren", uitkomst: "afgewezen", bedrag_gevorderd: 2400, bedrag_toegewezen: 0, bindend: "ja", samenvatting: "Schadevrije jaren gekoppeld aan verzekeringnemer, niet aan bestuurder." },
+    { uitspraaknr: "2024-1029", datum: "2024-11-20", type_verzekering: "woonhuisverzekering", kerngeschil: "uitleg_voorwaarden", uitkomst: "toegewezen", bedrag_gevorderd: 3980, bedrag_toegewezen: 3980, bindend: "nee", samenvatting: "Vervangingskosten vallen niet onder reparatiekosten-uitsluiting." },
+    { uitspraaknr: "2024-1005", datum: "2024-11-15", type_verzekering: "woonhuisverzekering", kerngeschil: "dekkingsweigering", uitkomst: "afgewezen", bedrag_gevorderd: 75000, bedrag_toegewezen: 10000, bindend: "ja", samenvatting: "Neerslagcriterium KNMI niet gehaald, coulance 10k uitgekeerd." },
+    { uitspraaknr: "2024-0861", datum: "2024-09-10", type_verzekering: "overlijdensrisicoverzekering", kerngeschil: "mededelingsplicht", uitkomst: "afgewezen", bedrag_gevorderd: 300000, bedrag_toegewezen: 0, bindend: "ja", samenvatting: "Fout adres opgegeven, verzekering nooit tot stand gekomen." },
+    { uitspraaknr: "2024-0660", datum: "2024-07-22", type_verzekering: "autoverzekering", kerngeschil: "premiegeschil", uitkomst: "afgewezen", bedrag_gevorderd: 1600, bedrag_toegewezen: 0, bindend: "nee", samenvatting: "Geen rechtsgrond voor vordering na opzegging door consument zelf." },
+    { uitspraaknr: "2024-0707", datum: "2024-08-05", type_verzekering: "autoverzekering", kerngeschil: "premiegeschil", uitkomst: "afgewezen", bedrag_gevorderd: 500, bedrag_toegewezen: 0, bindend: "nee", samenvatting: "Premieaanpassing niet onaanvaardbaar naar maatstaven R&B." },
+    { uitspraaknr: "2024-0274", datum: "2024-04-12", type_verzekering: "levensverzekering", kerngeschil: "vertraging", uitkomst: "afgewezen", bedrag_gevorderd: 5000, bedrag_toegewezen: 2877, bindend: "ja", samenvatting: "Administratieve fout, compensatie reeds voldoende." },
+    { uitspraaknr: "2024-0024", datum: "2024-01-18", type_verzekering: "rechtsbijstandverzekering", kerngeschil: "dekkingsweigering", uitkomst: "afgewezen", bedrag_gevorderd: 8000, bedrag_toegewezen: 0, bindend: "nee", samenvatting: "Coinbase/beleggingsfraude geen gedekte gebeurtenis." },
+    { uitspraaknr: "2024-0008", datum: "2024-01-05", type_verzekering: "arbeidsongeschiktheidsverzekering", kerngeschil: "mededelingsplicht", uitkomst: "afgewezen", bedrag_gevorderd: 45000, bedrag_toegewezen: 0, bindend: "nee", samenvatting: "Schending mededelingsplicht, verzekeraar mag uitkeringen terugvorderen." },
+    { uitspraaknr: "2024-0069", datum: "2024-02-28", type_verzekering: "beleggingsverzekering", kerngeschil: "zorgplicht", uitkomst: "deels", bedrag_gevorderd: 12000, bedrag_toegewezen: 4215, bindend: "ja", samenvatting: "Adviseur tekortgeschoten in nazorgverplichting, schade deels toewijsbaar." },
+    { uitspraaknr: "2023-0842", datum: "2023-10-15", type_verzekering: "woonhuisverzekering", kerngeschil: "dekkingsweigering", uitkomst: "toegewezen", bedrag_gevorderd: 22000, bedrag_toegewezen: 18500, bindend: "ja", samenvatting: "Stormschade gedekt, uitsluiting te ruim geinterpreteerd door verzekeraar." },
+    { uitspraaknr: "2023-0631", datum: "2023-08-02", type_verzekering: "reisverzekering", kerngeschil: "dekkingsweigering", uitkomst: "toegewezen", bedrag_gevorderd: 4500, bedrag_toegewezen: 4500, bindend: "nee", samenvatting: "Annulering wegens ziekte gedekt, verzekeraar onvoldoende onderbouwing afwijzing." },
+  ];
+  updateStats();
+  document.getElementById('dataStatus').className = 'data-status';
+  document.getElementById('dataStatus').innerHTML = `${uitspraken.length} demo-uitspraken geladen.`;
+  document.getElementById('uploadedFiles').innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--green-bg);border:1px solid rgba(22,163,74,0.15);border-radius:6px;font-size:13px;color:var(--green);">
+      Demo-dataset — ${uitspraken.length} uitspraken
+    </div>`;
+  updateInsights();
+}
+
+// ── Stats ──
+function updateStats() {
+  document.getElementById('statTotal').textContent = uitspraken.length;
+  const toegewezen = uitspraken.filter(u => u.uitkomst === 'toegewezen' || u.uitkomst === 'deels').length;
+  const afgewezen = uitspraken.filter(u => u.uitkomst === 'afgewezen').length;
+  const pctConsumer = uitspraken.length ? Math.round(toegewezen / uitspraken.length * 100) : 0;
+  const pctInsurer = uitspraken.length ? Math.round(afgewezen / uitspraken.length * 100) : 0;
+  document.getElementById('statConsumer').textContent = pctConsumer + '%';
+  document.getElementById('statInsurer').textContent = pctInsurer + '%';
+
+  const amounts = uitspraken.map(u => parseFloat(u.bedrag_gevorderd) || 0).filter(a => a > 0);
+  const avg = amounts.length ? amounts.reduce((s, a) => s + a, 0) / amounts.length : 0;
+  document.getElementById('statAvgAmount').textContent = avg ? '\u20AC' + Math.round(avg).toLocaleString('nl-NL') : '\u2014';
+}
+
+// ── Prediction ──
+function runPrediction() {
+  const btn = document.getElementById('btnPredict');
+  btn.disabled = true;
+  btn.textContent = 'Analyseren...';
+
+  const resultsArea = document.getElementById('resultsArea');
+  resultsArea.innerHTML = `
+    <div class="result-hero">
+      <div class="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">Analyseren van ${uitspraken.length} uitspraken...</div>
+      </div>
+    </div>`;
+
+  const input = {
+    type: document.getElementById('insuranceType').value,
+    dispute: document.getElementById('coreDispute').value,
+    amount: parseFloat(document.getElementById('claimAmount').value) || 0,
+    binding: document.getElementById('bindingAdvice').value,
+    evidence: document.getElementById('consumerEvidence').value,
+    expert: document.getElementById('expertReport').value,
+    goodwill: document.getElementById('goodwillOffer').value,
+    context: document.getElementById('additionalContext').value,
+  };
+
+  setTimeout(() => {
+    const result = analyzeCase(input);
+    renderResults(result, input);
+    btn.disabled = false;
+    btn.textContent = 'Analyseer & Voorspel';
+  }, 1500);
+}
+
+function analyzeCase(input) {
+  let score = 50;
+  const factors = [];
+
+  const typeMatches = uitspraken.filter(u => u.type_verzekering === input.type);
+  if (typeMatches.length > 0) {
+    const afgewezen = typeMatches.filter(u => u.uitkomst === 'afgewezen').length;
+    const baseRate = Math.round(afgewezen / typeMatches.length * 100);
+    score = baseRate;
+    factors.push({ label: `Basispercentage afwijzing ${input.type}`, value: baseRate + '%', type: baseRate > 60 ? 'pro' : 'con' });
+  }
+
+  if (input.evidence === 'sterk') {
+    score -= 15;
+    factors.push({ label: 'Sterk consumentenbewijs', value: '-15', type: 'con' });
+  } else if (input.evidence === 'zwak') {
+    score += 15;
+    factors.push({ label: 'Zwak consumentenbewijs', value: '+15', type: 'pro' });
+  }
+
+  if (input.expert === 'verzekeraar') {
+    score += 10;
+    factors.push({ label: 'Deskundigenrapport verzekeraar', value: '+10', type: 'pro' });
+  } else if (input.expert === 'consument') {
+    score -= 10;
+    factors.push({ label: 'Deskundigenrapport consument', value: '-10', type: 'con' });
+  }
+
+  if (input.dispute === 'mededelingsplicht') {
+    score += 20;
+    factors.push({ label: 'Schending mededelingsplicht (vaak succesvol voor verzekeraar)', value: '+20', type: 'pro' });
+  } else if (input.dispute === 'uitleg_voorwaarden') {
+    score -= 10;
+    factors.push({ label: 'Uitleg voorwaarden (contra proferentem risico)', value: '-10', type: 'con' });
+  } else if (input.dispute === 'zorgplicht') {
+    score -= 8;
+    factors.push({ label: 'Zorgplichtclaim (vaak deels toegewezen)', value: '-8', type: 'con' });
+  }
+
+  if (input.goodwill === 'ja_redelijk') {
+    score += 5;
+    factors.push({ label: 'Redelijk coulanceaanbod gedaan', value: '+5', type: 'neutral' });
+  }
+
+  if (input.amount > 50000) {
+    factors.push({ label: 'Hoog gevorderd bedrag (hogere procesbereidheid consument)', value: 'info', type: 'neutral' });
+  }
+
+  score = Math.max(5, Math.min(95, score));
+
+  const similar = uitspraken
+    .filter(u => u.type_verzekering === input.type || u.kerngeschil === input.dispute)
+    .slice(0, 5)
+    .map(u => ({
+      nr: u.uitspraaknr,
+      desc: u.samenvatting || 'Geen samenvatting',
+      outcome: u.uitkomst,
+      relevance: u.type_verzekering === input.type && u.kerngeschil === input.dispute ? '95%' :
+                 u.type_verzekering === input.type ? '70%' : '55%'
+    }));
+
+  return { score, factors, similar };
+}
+
+function renderResults(result, input) {
+  const { score, factors, similar } = result;
+  const verdict = score >= 60 ? 'Procedure afwachten' : score <= 40 ? 'Overweeg uitkeren' : 'Onzeker — nader beoordelen';
+  const verdictClass = score >= 60 ? 'afwachten' : score <= 40 ? 'uitkeren' : 'onzeker';
+  const barClass = score >= 60 ? 'amber' : score <= 40 ? 'green' : 'amber';
+
+  const resultsArea = document.getElementById('resultsArea');
+  resultsArea.innerHTML = `
+    <div class="result-hero animate-in">
+      <div class="verdict-label">Advies</div>
+      <div class="verdict-text ${verdictClass}">${verdict}</div>
+      <p style="color:var(--text-muted);font-size:14px;margin-top:4px;">
+        Score: ${score}/100 — ${score >= 60 ? 'hoge kans dat vordering wordt afgewezen' : score <= 40 ? 'aanzienlijk risico op (gedeeltelijke) toewijzing' : 'uitkomst onzeker op basis van beschikbare data'}
+      </p>
+      <div class="confidence-bar-wrap">
+        <div class="confidence-bar">
+          <div class="confidence-fill ${barClass}" style="width: ${score}%"></div>
+        </div>
+        <div class="confidence-labels">
+          <span>\u2190 Uitkeren</span>
+          <span>Afwachten \u2192</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="analysis-grid">
+      <div class="analysis-card animate-in delay-1">
+        <h3>Beslisfactoren</h3>
+        <ul class="factor-list">
+          ${factors.map(f => `
+            <li>
+              <span>${f.label}</span>
+              <span class="factor-tag ${f.type}">${f.value}</span>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+      <div class="analysis-card animate-in delay-2">
+        <h3>Aanbeveling</h3>
+        <p style="margin-bottom: 12px;">
+          ${score >= 60
+            ? 'Op basis van vergelijkbare uitspraken heeft de verzekeraar een sterke positie. De geschillencommissie wijst dit type vordering vaker af. Procedure afwachten lijkt verdedigbaar.'
+            : score <= 40
+            ? 'Er zijn significante risicofactoren. Vergelijkbare zaken worden regelmatig (deels) toegewezen. Overweeg een schikking of verhoogd coulanceaanbod om proceskosten en reputatieschade te beperken.'
+            : 'De beschikbare data geeft geen eenduidig beeld. Overweeg aanvullende juridische analyse of het inwinnen van een deskundigenoordeel voordat u beslist.'
+          }
+        </p>
+        <p style="font-size:12px; color:var(--text-dim); border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
+          Dit is een indicatief model. Raadpleeg altijd een juridisch specialist voor definitieve besluitvorming.
+        </p>
+      </div>
+    </div>
+
+    ${similar.length > 0 ? `
+    <div class="similar-cases animate-in delay-3">
+      <h3>Vergelijkbare uitspraken</h3>
+      ${similar.map(c => `
+        <div class="case-row">
+          <span class="case-nr">${c.nr}</span>
+          <span class="case-desc">${c.desc}</span>
+          <span class="case-outcome ${c.outcome}">${c.outcome}</span>
+          <span class="case-relevance">${c.relevance}</span>
+        </div>
+      `).join('')}
+    </div>` : ''}
+  `;
+}
+
+// ── Insights ──
+function updateInsights() {
+  if (uitspraken.length === 0) return;
+
+  const types = [...new Set(uitspraken.map(u => u.type_verzekering))];
+  const chartHTML = types.map(type => {
+    const matches = uitspraken.filter(u => u.type_verzekering === type);
+    const t = matches.filter(u => u.uitkomst === 'toegewezen').length;
+    const d = matches.filter(u => u.uitkomst === 'deels').length;
+    const a = matches.filter(u => u.uitkomst === 'afgewezen').length;
+    const total = matches.length;
+    return `
+      <div style="margin-bottom: 14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:13px;color:var(--text);">${type}</span>
+          <span style="font-size:12px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;">${total}x</span>
+        </div>
+        <div style="display:flex;height:18px;border-radius:4px;overflow:hidden;background:var(--bg-input);">
+          <div style="width:${t/total*100}%;background:var(--green);"></div>
+          <div style="width:${d/total*100}%;background:var(--amber);"></div>
+          <div style="width:${a/total*100}%;background:var(--red);opacity:0.7;"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('insightChart').innerHTML = chartHTML + `
+    <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--text-dim);">
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:var(--green);border-radius:2px;"></span> Toegewezen</span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:var(--amber);border-radius:2px;"></span> Deels</span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:var(--red);opacity:0.7;border-radius:2px;"></span> Afgewezen</span>
+    </div>`;
+
+  document.getElementById('insightPredictors').innerHTML = `
+    <ul class="factor-list">
+      <li><span>Schending mededelingsplicht</span><span class="factor-tag pro">verzekeraar +</span></li>
+      <li><span>Contra proferentem (uitleg voorwaarden)</span><span class="factor-tag con">consument +</span></li>
+      <li><span>Deskundigenrapport aanwezig</span><span class="factor-tag neutral">wisselend</span></li>
+      <li><span>Sterk feitelijk bewijs consument</span><span class="factor-tag con">consument +</span></li>
+    </ul>`;
+
+  document.getElementById('insightRisks').innerHTML = `
+    <ul class="factor-list">
+      <li><span>Onduidelijke polisvoorwaarden</span><span class="factor-tag con">hoog</span></li>
+      <li><span>Gebrekkige informatievoorziening</span><span class="factor-tag con">hoog</span></li>
+      <li><span>Geen coulanceaanbod gedaan</span><span class="factor-tag neutral">middel</span></li>
+      <li><span>Hoog gevorderd bedrag (>50k)</span><span class="factor-tag neutral">middel</span></li>
+    </ul>`;
+}
+
+// ── Drag & Drop ──
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.style.borderColor = 'var(--accent)'; });
+uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = 'var(--border)'; });
+uploadZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.style.borderColor = 'var(--border)';
+  const fileInput = document.getElementById('fileInput');
+  fileInput.files = e.dataTransfer.files;
+  handleFileUpload({ target: fileInput });
+});
+</script>
+
+</body>
+</html>
