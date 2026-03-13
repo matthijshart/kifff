@@ -1,0 +1,335 @@
+{
+  "meta": {
+    "type": "test",
+    "aantal": 9,
+    "datum": "2026-03-13"
+  },
+  "uitspraken": [
+    {
+      "uitspraaknr": "2024-0707",
+      "datum": "2024-08-05",
+      "type_verzekering": "autoverzekering",
+      "kerngeschil": "premiegeschil",
+      "uitkomst": "afgewezen",
+      "bedrag_gevorderd": 500,
+      "bedrag_toegewezen": 0,
+      "bindend": false,
+      "commissie": "geschillencommissie",
+      "samenvatting": "Premieaanpassing niet onaanvaardbaar naar maatstaven van redelijkheid en billijkheid.",
+      "argumenten_consument": [
+        "Premie onredelijk verhoogd",
+        "Geen reden voor verhoging"
+      ],
+      "argumenten_verzekeraar": [
+        "Premieverhoging conform tariefswijziging",
+        "Recht op aanpassing in polisvoorwaarden"
+      ],
+      "juridische_grondslag": [
+        "art. 6:248 BW"
+      ],
+      "beslisfactoren": {
+        "bewijs_consument": "zwak",
+        "deskundigenrapport": "geen",
+        "coulance_aangeboden": false,
+        "polisvoorwaarden_duidelijk": true,
+        "consument_nalatig": false,
+        "verzekeraar_informatieplicht_geschonden": false
+      },
+      "tags": [
+        "premie",
+        "redelijkheid-billijkheid"
+      ]
+    },
+    {
+      "uitspraaknr": "2024-0780",
+      "datum": "2024-08-28",
+      "type_verzekering": "levensverzekering",
+      "kerngeschil": "mededelingsplicht",
+      "uitkomst": "afgewezen",
+      "bedrag_gevorderd": 150000,
+      "bedrag_toegewezen": 0,
+      "bindend": true,
+      "commissie": "geschillencommissie",
+      "samenvatting": "Rookgedrag verzwegen bij aanvraag levensverzekering. Verzekeraar had bij juiste informatie hogere premie berekend of geweigerd.",
+      "argumenten_consument": [
+        "Was gestopt met roken op moment van aanvraag"
+      ],
+      "argumenten_verzekeraar": [
+        "Gezondheidsvragenlijst onjuist ingevuld",
+        "Rookhistorie relevant voor risicobeoordeling"
+      ],
+      "juridische_grondslag": [
+        "art. 7:928 BW",
+        "art. 7:930 lid 4 BW"
+      ],
+      "beslisfactoren": {
+        "bewijs_consument": "zwak",
+        "deskundigenrapport": "verzekeraar",
+        "coulance_aangeboden": false,
+        "polisvoorwaarden_duidelijk": true,
+        "consument_nalatig": true,
+        "verzekeraar_informatieplicht_geschonden": false
+      },
+      "tags": [
+        "mededelingsplicht",
+        "roken",
+        "gezondheidsvragen"
+      ]
+    },
+    {
+      "uitspraaknr": "2024-0560",
+      "datum": "2024-06-28",
+      "type_verzekering": "brandverzekering",
+      "kerngeschil": "dekkingsweigering",
+      "uitkomst": "afgewezen",
+      "bedrag_gevorderd": 85000,
+      "bedrag_toegewezen": 0,
+      "bindend": true,
+      "commissie": "geschillencommissie",
+      "samenvatting": "Brand door hennepkwekerij. Verzekeraar wijst af op grond van onrechtmatig gebruik pand.",
+      "argumenten_consument": [
+        "Was niet op de hoogte van kwekerij (huurder)",
+        "Brand was onvoorzien"
+      ],
+      "argumenten_verzekeraar": [
+        "Onrechtmatig gebruik pand",
+        "Verhuurder had toezicht moeten houden"
+      ],
+      "juridische_grondslag": [
+        "Polisvoorwaarden onrechtmatig gebruik",
+        "art. 7:952 BW"
+      ],
+      "beslisfactoren": {
+        "bewijs_consument": "zwak",
+        "deskundigenrapport": "verzekeraar",
+        "coulance_aangeboden": false,
+        "polisvoorwaarden_duidelijk": true,
+        "consument_nalatig": true,
+        "verzekeraar_informatieplicht_geschonden": false
+      },
+      "tags": [
+        "brand",
+        "hennep",
+        "onrechtmatig-gebruik"
+      ]
+    },
+    {
+      "uitspraaknr": "2024-0820",
+      "datum": "2024-09-01",
+      "type_verzekering": "inboedelverzekering",
+      "kerngeschil": "dekkingsweigering",
+      "uitkomst": "afgewezen",
+      "bedrag_gevorderd": 5500,
+      "bedrag_toegewezen": 0,
+      "bindend": false,
+      "commissie": "geschillencommissie",
+      "samenvatting": "Waterschade door open raam tijdens regenbui. Verzekeraar wijst terecht af op grond van eigen schuld.",
+      "argumenten_consument": [
+        "Was niet thuis",
+        "Kon raam niet sluiten"
+      ],
+      "argumenten_verzekeraar": [
+        "Eigen verantwoordelijkheid om ramen te sluiten",
+        "Geen onvoorziene gebeurtenis"
+      ],
+      "juridische_grondslag": [
+        "Polisvoorwaarden eigen schuld"
+      ],
+      "beslisfactoren": {
+        "bewijs_consument": "zwak",
+        "deskundigenrapport": "geen",
+        "coulance_aangeboden": false,
+        "polisvoorwaarden_duidelijk": true,
+        "consument_nalatig": true,
+        "verzekeraar_informatieplicht_geschonden": false
+      },
+      "tags": [
+        "waterschade",
+        "eigen-schuld",
+        "nalatigheid"
+      ]
+    },
+    {
+      "uitspraaknr": "2023-0270",
+      "datum": "2023-04-05",
+      "type_verzekering": "aansprakelijkheidsverzekering",
+      "kerngeschil": "dekkingsweigering",
+      "uitkomst": "toegewezen",
+      "bedrag_gevorderd": 3500,
+      "bedrag_toegewezen": 3500,
+      "bindend": false,
+      "commissie": "geschillencommissie",
+      "samenvatting": "Schade door hond aan bezoeker gedekt. AVP dekt aansprakelijkheid voor huisdieren.",
+      "argumenten_consument": [
+        "Hond heeft bezoeker gebeten",
+        "Aansprakelijk als bezitter"
+      ],
+      "argumenten_verzekeraar": [
+        "Bezoeker had hond uitgelokt"
+      ],
+      "juridische_grondslag": [
+        "art. 6:179 BW (dierenbezitter)",
+        "Polisvoorwaarden AVP"
+      ],
+      "beslisfactoren": {
+        "bewijs_consument": "sterk",
+        "deskundigenrapport": "geen",
+        "coulance_aangeboden": false,
+        "polisvoorwaarden_duidelijk": true,
+        "consument_nalatig": false,
+        "verzekeraar_informatieplicht_geschonden": false
+      },
+      "tags": [
+        "hondenbeet",
+        "dierenbezitter",
+        "AVP"
+      ]
+    },
+    {
+      "uitspraaknr": "2023-0842",
+      "datum": "2023-10-15",
+      "type_verzekering": "woonhuisverzekering",
+      "kerngeschil": "dekkingsweigering",
+      "uitkomst": "toegewezen",
+      "bedrag_gevorderd": 22000,
+      "bedrag_toegewezen": 18500,
+      "bindend": true,
+      "commissie": "geschillencommissie",
+      "samenvatting": "Stormschade gedekt, uitsluiting te ruim geinterpreteerd door verzekeraar.",
+      "argumenten_consument": [
+        "Storm heeft schade veroorzaakt",
+        "Uitsluiting is te breed geformuleerd"
+      ],
+      "argumenten_verzekeraar": [
+        "Schade valt onder uitsluiting",
+        "Geen stormschade maar achterstallig onderhoud"
+      ],
+      "juridische_grondslag": [
+        "Contra proferentem",
+        "art. 6:238 BW"
+      ],
+      "beslisfactoren": {
+        "bewijs_consument": "sterk",
+        "deskundigenrapport": "consument",
+        "coulance_aangeboden": false,
+        "polisvoorwaarden_duidelijk": false,
+        "consument_nalatig": false,
+        "verzekeraar_informatieplicht_geschonden": false
+      },
+      "tags": [
+        "stormschade",
+        "uitsluiting",
+        "contra-proferentem"
+      ]
+    },
+    {
+      "uitspraaknr": "2023-1050",
+      "datum": "2023-12-10",
+      "type_verzekering": "inboedelverzekering",
+      "kerngeschil": "dekkingsweigering",
+      "uitkomst": "toegewezen",
+      "bedrag_gevorderd": 7800,
+      "bedrag_toegewezen": 7800,
+      "bindend": true,
+      "commissie": "geschillencommissie",
+      "samenvatting": "Waterschade door gesprongen leiding gedekt. Verzekeraar kan niet aantonen dat leiding al eerder lekte.",
+      "argumenten_consument": [
+        "Leiding plotseling gesprongen",
+        "Loodgieter bevestigt breuk"
+      ],
+      "argumenten_verzekeraar": [
+        "Mogelijk sluipende lekkage",
+        "Onderhoud niet aantoonbaar"
+      ],
+      "juridische_grondslag": [
+        "Bewijslast verzekeraar"
+      ],
+      "beslisfactoren": {
+        "bewijs_consument": "sterk",
+        "deskundigenrapport": "consument",
+        "coulance_aangeboden": false,
+        "polisvoorwaarden_duidelijk": true,
+        "consument_nalatig": false,
+        "verzekeraar_informatieplicht_geschonden": false
+      },
+      "tags": [
+        "leidingwater",
+        "bewijslast"
+      ]
+    },
+    {
+      "uitspraaknr": "2023-0955",
+      "datum": "2023-11-20",
+      "type_verzekering": "levensverzekering",
+      "kerngeschil": "informatievoorziening",
+      "uitkomst": "deels",
+      "bedrag_gevorderd": 25000,
+      "bedrag_toegewezen": 8000,
+      "bindend": true,
+      "commissie": "geschillencommissie",
+      "samenvatting": "Onvoldoende informatie verstrekt over kosten levensverzekering. Deels compensatie voor te hoge kosten.",
+      "argumenten_consument": [
+        "Nooit geinformeerd over werkelijke kosten",
+        "Rendement veel lager dan voorgesteld"
+      ],
+      "argumenten_verzekeraar": [
+        "Informatie was beschikbaar in brochure",
+        "Consument had zelf moeten informeren"
+      ],
+      "juridische_grondslag": [
+        "Wft informatieplicht",
+        "Compensatieregeling beleggingsverzekeringen"
+      ],
+      "beslisfactoren": {
+        "bewijs_consument": "gemiddeld",
+        "deskundigenrapport": "onafhankelijk",
+        "coulance_aangeboden": false,
+        "polisvoorwaarden_duidelijk": false,
+        "consument_nalatig": false,
+        "verzekeraar_informatieplicht_geschonden": true
+      },
+      "tags": [
+        "kosten",
+        "informatieplicht",
+        "woekerpolis"
+      ]
+    },
+    {
+      "uitspraaknr": "2024-0069",
+      "datum": "2024-02-28",
+      "type_verzekering": "beleggingsverzekering",
+      "kerngeschil": "zorgplicht",
+      "uitkomst": "deels",
+      "bedrag_gevorderd": 12000,
+      "bedrag_toegewezen": 4215,
+      "bindend": true,
+      "commissie": "geschillencommissie",
+      "samenvatting": "Adviseur tekortgeschoten in nazorgverplichting bij beleggingsverzekering. Schade deels toewijsbaar.",
+      "argumenten_consument": [
+        "Nooit geinformeerd over risico's",
+        "Adviseur heeft nagelaten te waarschuwen"
+      ],
+      "argumenten_verzekeraar": [
+        "Consument eigen verantwoordelijkheid",
+        "Informatie was beschikbaar"
+      ],
+      "juridische_grondslag": [
+        "art. 7:401 BW (zorgplicht)",
+        "Wft zorgplichtbepalingen"
+      ],
+      "beslisfactoren": {
+        "bewijs_consument": "gemiddeld",
+        "deskundigenrapport": "onafhankelijk",
+        "coulance_aangeboden": false,
+        "polisvoorwaarden_duidelijk": true,
+        "consument_nalatig": false,
+        "verzekeraar_informatieplicht_geschonden": true
+      },
+      "tags": [
+        "woekerpolis",
+        "zorgplicht",
+        "nazorg"
+      ]
+    }
+  ]
+}
