@@ -28,6 +28,7 @@ import sys
 import time
 from datetime import date
 from pathlib import Path
+from typing import Dict, List, Optional
 
 import anthropic
 
@@ -141,7 +142,7 @@ def parse_pdf_with_claude(
     pdf_path: Path,
     schema: dict,
     model: str = MODEL,
-) -> dict | None:
+) -> Optional[dict]:
     """Send a PDF to Claude and get structured JSON back."""
     pdf_b64 = read_pdf_base64(pdf_path)
     extraction_prompt = build_extraction_prompt(schema)

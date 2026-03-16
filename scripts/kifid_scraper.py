@@ -26,6 +26,7 @@ import sys
 import time
 from datetime import date
 from pathlib import Path
+from typing import Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -82,7 +83,7 @@ def create_session() -> requests.Session:
     return session
 
 
-def fetch(session: requests.Session, url: str, **kwargs) -> requests.Response | None:
+def fetch(session: requests.Session, url: str, **kwargs) -> Optional[requests.Response]:
     """Fetch a URL with rate limiting and error handling."""
     time.sleep(REQUEST_DELAY)
     try:
@@ -99,7 +100,7 @@ def fetch(session: requests.Session, url: str, **kwargs) -> requests.Response | 
 # ---------------------------------------------------------------------------
 
 
-def extract_uitspraak_nr(url_or_filename: str) -> str | None:
+def extract_uitspraak_nr(url_or_filename: str) -> Optional[str]:
     """Extract uitspraaknummer from a URL or filename like 'uitspraak-2025-0448'."""
     m = re.search(r"uitspraak-(\d{4}-\d{3,4})", url_or_filename)
     return m.group(1) if m else None
@@ -489,7 +490,7 @@ def save_download_log(log_data: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
-def download_pdfs(session: requests.Session, urls: list[dict], limit: int | None = None) -> list[dict]:
+def download_pdfs(session: requests.Session, urls: List[dict], limit: Optional[int] = None) -> List[dict]:
     """Download PDFs that haven't been downloaded yet."""
     PDF_DIR.mkdir(parents=True, exist_ok=True)
     dl_log = load_download_log()
