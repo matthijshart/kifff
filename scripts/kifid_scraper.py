@@ -16,6 +16,8 @@ Usage:
     python3 scripts/kifid_scraper.py --download    # Only download from urls.json
     python3 scripts/kifid_scraper.py --limit 50    # Limit number of downloads
     python3 scripts/kifid_scraper.py --category Verzekeringen  # Filter by category
+    python3 scripts/kifid_scraper.py --search woonhuisverzekering  # Search term filter
+    python3 scripts/kifid_scraper.py --search woonhuisverzekering --limit 100  # Search + download limit
 """
 
 import argparse
@@ -95,10 +97,17 @@ def extract_uitspraak_nr(url_or_name: str) -> Optional[str]:
 def discover_from_api(
     session: requests.Session,
     category: str = "",
+    search: str = "",
     max_items: int = 0,
 ) -> List[dict]:
     """Paginate through the KIFID Search API and collect uitspraak metadata."""
-    log.info("Discovering uitspraken via KIFID API...")
+    filters = []
+    if category:
+        filters.append("category=%s" % category)
+    if search:
+        filters.append("search=%s" % search)
+    log.info("Discovering uitspraken via KIFID API%s...",
+             " (%s)" % ", ".join(filters) if filters else "")
 
     all_items = []  # type: List[dict]
     page = 1
@@ -106,7 +115,7 @@ def discover_from_api(
 
     while True:
         params = {
-            "searchTerm": "",
+            "searchTerm": search,
             "category": category,
             "authority": "",
             "targetGroup": "",
@@ -153,7 +162,7 @@ def discover_from_api(
                 log.debug("  Skipping item without nr/pdf: %s", name)
                 continue
 
-            all_items.append({
+            entry = {
                 "uitspraaknr": nr,
                 "pdf_url": pdf_url,
                 "title": name,
@@ -161,10 +170,18 @@ def discover_from_api(
                 "authority": item.get("authority", ""),
                 "defendant": item.get("defendant", ""),
                 "summary": item.get("summary", ""),
+                "judgementTags": item.get("judgementTags", ""),
                 "page_url": item.get("url", ""),
                 "date_found": date.today().isoformat(),
                 "downloaded": False,
-            })
+            }
+
+            # Store full text if API provides it (saves PDF parsing)
+            pdf_content = item.get("pdfContent", "")
+            if pdf_content and len(pdf_content) > 100:
+                entry["pdfContent"] = pdf_content
+
+            all_items.append(entry)
 
         log.info("  Page %d: collected %d items (total so far: %d)",
                  page, len(items), len(all_items))
@@ -328,6 +345,7 @@ def main():
     parser.add_argument("--limit", type=int, default=None, help="Max number of PDFs to download")
     parser.add_argument("--max-items", type=int, default=0, help="Max items to discover from API (0=all)")
     parser.add_argument("--category", type=str, default="", help="Filter by category (e.g. 'Verzekeringen')")
+    parser.add_argument("--search", type=str, default="", help="Search term (e.g. 'woonhuisverzekering')")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
     args = parser.parse_args()
 
@@ -355,7 +373,7 @@ def main():
     log.info("KIFID Uitspraken Scraper — Discovery Phase")
     log.info("=" * 60)
 
-    new_urls = discover_from_api(session, category=args.category, max_items=args.max_items)
+    new_urls = discover_from_api(session, category=args.category, search=args.search, max_items=args.max_items)
 
     # Merge with existing
     existing = load_urls()
