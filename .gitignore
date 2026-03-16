@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+data/pdfs/
+data/urls.json
+data/download_log.json
