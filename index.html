@@ -989,8 +989,8 @@
   </div>
 </div>
 <p class="subtitle">
-  Analyseer 14.000+ openbare KIFID-uitspraken en voorspel of uitkering of procedure afwachten voordeliger is.
-  Gebaseerd op het volledige uitsprakenregister van <a href="https://www.kifid.nl/uitspraken/" target="_blank" rel="noopener noreferrer">kifid.nl</a>.
+  Analyseer openbare KIFID-uitspraken en voorspel of uitkering of procedure afwachten voordeliger is.
+  Gebaseerd op het uitsprakenregister van <a href="https://www.kifid.nl/kifid-kennis-en-uitspraken/uitspraken/" target="_blank" rel="noopener noreferrer">kifid.nl</a>.
 </p>
 </header>
 
@@ -1277,7 +1277,7 @@
 
   <div style="display:flex; gap:12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
     <button class="btn-predict" onclick="loadFullDataset()" style="flex:1;">
-      Volledige dataset laden (47 uitspraken)
+      Volledige dataset laden
     </button>
     <button class="btn-predict" onclick="loadDemoData()" style="flex:1; background: var(--bg-input); color: var(--text); border: 1px solid var(--border);">
       Demo-data (12 uitspraken)
@@ -1367,6 +1367,7 @@ function initCounters() {
 document.addEventListener('DOMContentLoaded', () => {
   initCounters();
   initDemoAnimation();
+  autoLoadDataset();
 });
 
 // ── State ──
@@ -1703,6 +1704,14 @@ function analyzeCase(input) {
 
   score = Math.max(5, Math.min(95, score));
 
+  // Betrouwbaarheid op basis van sample size
+  const relevantMatches = uitspraken.filter(u => u.type_verzekering === input.type || u.kerngeschil === input.dispute).length;
+  let confidence = 'laag';
+  let confidencePct = 25;
+  if (relevantMatches >= 20) { confidence = 'hoog'; confidencePct = 85; }
+  else if (relevantMatches >= 10) { confidence = 'gemiddeld'; confidencePct = 60; }
+  else if (relevantMatches >= 5) { confidence = 'beperkt'; confidencePct = 40; }
+
   // Vergelijkbare zaken zoeken en scoren op relevantie
   const similar = uitspraken
     .filter(u => u.type_verzekering === input.type || u.kerngeschil === input.dispute)
@@ -1724,14 +1733,15 @@ function analyzeCase(input) {
     .sort((a, b) => parseInt(b.relevance) - parseInt(a.relevance))
     .slice(0, 6);
 
-  return { score, factors, similar, dataPoints: uitspraken.length };
+  return { score, factors, similar, dataPoints: uitspraken.length, confidence, confidencePct, relevantMatches };
 }
 
 function renderResults(result, input) {
-  const { score, factors, similar } = result;
+  const { score, factors, similar, confidence, confidencePct, relevantMatches, dataPoints } = result;
   const verdict = score >= 60 ? 'Procedure afwachten' : score <= 40 ? 'Overweeg uitkeren' : 'Onzeker — nader beoordelen';
   const verdictClass = score >= 60 ? 'afwachten' : score <= 40 ? 'uitkeren' : 'onzeker';
   const barClass = score >= 60 ? 'amber' : score <= 40 ? 'green' : 'amber';
+  const confColor = confidencePct >= 60 ? 'var(--green)' : confidencePct >= 40 ? 'var(--amber)' : 'var(--red)';
 
   const resultsArea = document.getElementById('resultsArea');
   resultsArea.innerHTML = `
@@ -1749,6 +1759,11 @@ function renderResults(result, input) {
           <span>\u2190 Uitkeren</span>
           <span>Afwachten \u2192</span>
         </div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:24px;margin-top:16px;font-size:12px;color:var(--text-dim);border-top:1px solid var(--border-subtle);padding-top:14px;">
+        <span>Betrouwbaarheid: <strong style="color:${confColor}">${confidence}</strong></span>
+        <span>Vergelijkbare zaken: <strong>${relevantMatches}</strong></span>
+        <span>Dataset: <strong>${dataPoints}</strong> uitspraken</span>
       </div>
     </div>
 
@@ -1827,21 +1842,64 @@ function updateInsights() {
       <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:var(--red);opacity:0.7;border-radius:2px;"></span> Afgewezen</span>
     </div>`;
 
+  // Data-driven predictors: calculate actual win rates per dispute type
+  const disputes = [...new Set(uitspraken.map(u => u.kerngeschil).filter(Boolean))];
+  const disputeStats = disputes.map(d => {
+    const matches = uitspraken.filter(u => u.kerngeschil === d);
+    const afgewezen = matches.filter(u => u.uitkomst === 'afgewezen').length;
+    const rate = Math.round(afgewezen / matches.length * 100);
+    return { name: d, count: matches.length, afwijzingsPct: rate };
+  }).filter(d => d.count >= 2).sort((a,b) => b.afwijzingsPct - a.afwijzingsPct);
+
   document.getElementById('insightPredictors').innerHTML = `
     <ul class="factor-list">
-      <li><span>Schending mededelingsplicht</span><span class="factor-tag pro">verzekeraar +</span></li>
-      <li><span>Contra proferentem (uitleg voorwaarden)</span><span class="factor-tag con">consument +</span></li>
-      <li><span>Deskundigenrapport aanwezig</span><span class="factor-tag neutral">wisselend</span></li>
-      <li><span>Sterk feitelijk bewijs consument</span><span class="factor-tag con">consument +</span></li>
-    </ul>`;
+      ${disputeStats.slice(0, 5).map(d => `
+        <li>
+          <span>${d.name} (n=${d.count})</span>
+          <span class="factor-tag ${d.afwijzingsPct > 60 ? 'pro' : d.afwijzingsPct < 40 ? 'con' : 'neutral'}">${d.afwijzingsPct}% afw.</span>
+        </li>
+      `).join('')}
+    </ul>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:10px;">Gebaseerd op ${uitspraken.length} uitspraken</p>`;
 
-  document.getElementById('insightRisks').innerHTML = `
+  // Data-driven risk factors from beslisfactoren
+  const metBeslisfactoren = uitspraken.filter(u => u.beslisfactoren);
+  const riskFactors = [];
+
+  if (metBeslisfactoren.length > 0) {
+    // Polisvoorwaarden onduidelijk
+    const onduidelijk = metBeslisfactoren.filter(u => u.beslisfactoren.polisvoorwaarden_duidelijk === false);
+    const onduidelijkToegewezen = onduidelijk.filter(u => u.uitkomst === 'toegewezen' || u.uitkomst === 'deels').length;
+    if (onduidelijk.length > 0) riskFactors.push({ name: 'Onduidelijke polisvoorwaarden', pct: Math.round(onduidelijkToegewezen/onduidelijk.length*100), n: onduidelijk.length });
+
+    // Informatieplicht geschonden
+    const infoPlicht = metBeslisfactoren.filter(u => u.beslisfactoren.verzekeraar_informatieplicht_geschonden === true);
+    const infoToegewezen = infoPlicht.filter(u => u.uitkomst === 'toegewezen' || u.uitkomst === 'deels').length;
+    if (infoPlicht.length > 0) riskFactors.push({ name: 'Informatieplicht geschonden', pct: Math.round(infoToegewezen/infoPlicht.length*100), n: infoPlicht.length });
+
+    // Geen coulance
+    const geenCoulance = metBeslisfactoren.filter(u => u.beslisfactoren.coulance_aangeboden === false);
+    const geenCoulanceToegewezen = geenCoulance.filter(u => u.uitkomst === 'toegewezen' || u.uitkomst === 'deels').length;
+    if (geenCoulance.length > 0) riskFactors.push({ name: 'Geen coulance aangeboden', pct: Math.round(geenCoulanceToegewezen/geenCoulance.length*100), n: geenCoulance.length });
+
+    // Sterk bewijs consument
+    const sterkBewijs = metBeslisfactoren.filter(u => u.beslisfactoren.bewijs_consument === 'sterk');
+    const sterkToegewezen = sterkBewijs.filter(u => u.uitkomst === 'toegewezen' || u.uitkomst === 'deels').length;
+    if (sterkBewijs.length > 0) riskFactors.push({ name: 'Sterk bewijs consument', pct: Math.round(sterkToegewezen/sterkBewijs.length*100), n: sterkBewijs.length });
+  }
+
+  riskFactors.sort((a,b) => b.pct - a.pct);
+  document.getElementById('insightRisks').innerHTML = riskFactors.length > 0 ? `
     <ul class="factor-list">
-      <li><span>Onduidelijke polisvoorwaarden</span><span class="factor-tag con">hoog</span></li>
-      <li><span>Gebrekkige informatievoorziening</span><span class="factor-tag con">hoog</span></li>
-      <li><span>Geen coulanceaanbod gedaan</span><span class="factor-tag neutral">middel</span></li>
-      <li><span>Hoog gevorderd bedrag (>50k)</span><span class="factor-tag neutral">middel</span></li>
-    </ul>`;
+      ${riskFactors.map(r => `
+        <li>
+          <span>${r.name} (n=${r.n})</span>
+          <span class="factor-tag ${r.pct > 60 ? 'con' : r.pct > 40 ? 'neutral' : 'pro'}">${r.pct}% toeg.</span>
+        </li>
+      `).join('')}
+    </ul>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:10px;">% toewijzing wanneer deze factor aanwezig is</p>` :
+    `<p style="font-size:13px;color:var(--text-dim);">Onvoldoende data met beslisfactoren.</p>`;
 }
 
 // ── KIFID Lookup ──
@@ -1900,6 +1958,55 @@ uploadZone.addEventListener('drop', (e) => {
   fileInput.files = e.dataTransfer.files;
   handleFileUpload({ target: fileInput });
 });
+
+// ── Auto-load Dataset ──
+async function autoLoadDataset() {
+  try {
+    const response = await fetch('data/uitspraken/dataset.json');
+    if (!response.ok) return;
+    const data = await response.json();
+    uitspraken = data.uitspraken || [];
+    if (uitspraken.length === 0) return;
+    updateStats();
+    updateInsights();
+    // Update data tab status
+    document.getElementById('dataStatus').className = 'data-status';
+    document.getElementById('dataStatus').innerHTML = `${uitspraken.length} uitspraken automatisch geladen uit dataset.`;
+    document.getElementById('uploadedFiles').innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--radius);font-size:13px;color:var(--green);">
+        Dataset — ${uitspraken.length} uitspraken (automatisch geladen)
+      </div>`;
+    // Update the load button text
+    const loadBtn = document.querySelector('[onclick="loadFullDataset()"]');
+    if (loadBtn) loadBtn.textContent = `Dataset herladen (${uitspraken.length} uitspraken)`;
+    // Update hero stats with real data
+    updateHeroStats();
+  } catch (e) {
+    // Silently fail — user can load manually
+  }
+}
+
+function updateHeroStats() {
+  if (uitspraken.length === 0) return;
+  const total = uitspraken.length;
+  const toegewezen = uitspraken.filter(u => u.uitkomst === 'toegewezen').length;
+  const deels = uitspraken.filter(u => u.uitkomst === 'deels').length;
+  const afgewezen = uitspraken.filter(u => u.uitkomst === 'afgewezen').length;
+  const consumerWin = Math.round((toegewezen + deels) / total * 100);
+  const insurerWin = Math.round(afgewezen / total * 100);
+  const amounts = uitspraken.map(u => u.bedrag_gevorderd).filter(a => a && a > 0);
+  const avgAmount = amounts.length ? Math.round(amounts.reduce((a,b) => a+b, 0) / amounts.length) : 0;
+
+  // Update hero stat counters with real data
+  const totalEl = document.querySelector('#statTotal span');
+  if (totalEl) { totalEl.dataset.countTo = total; countUp(totalEl, total, 1400, '', '', false); }
+  const consEl = document.querySelector('#statConsumer span');
+  if (consEl) { consEl.dataset.countTo = consumerWin; countUp(consEl, consumerWin, 1000, '', '%', false); }
+  const insEl = document.querySelector('#statInsurer span');
+  if (insEl) { insEl.dataset.countTo = insurerWin; countUp(insEl, insurerWin, 1000, '', '%', false); }
+  const amtEl = document.querySelector('#statAvgAmount span');
+  if (amtEl) { amtEl.dataset.countTo = avgAmount; countUp(amtEl, avgAmount, 1400, '\u20AC', '', true); }
+}
 
 // ── Keyboard Navigation for Tabs ──
 document.querySelectorAll('.tab-btn').forEach((btn, i, btns) => {
