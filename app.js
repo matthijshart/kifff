@@ -3,14 +3,28 @@
 let uitspraken = [];
 let currentTab = 'predict';
 let policyAnalysis = null;
+let trainedModel = null;
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', () => {
   autoLoadDataset();
+  autoLoadModel();
   initCountAnimations();
   initTheme();
   initDragDrop();
 });
+
+// ── Load trained model ──
+async function autoLoadModel() {
+  try {
+    var response = await fetch('data/model.json');
+    if (!response.ok) return;
+    trainedModel = await response.json();
+    console.log('Model geladen: ' + (trainedModel.meta || {}).totaal_uitspraken + ' uitspraken getraind');
+  } catch (e) {
+    console.log('Geen getraind model gevonden, runtime analyse wordt gebruikt.');
+  }
+}
 
 // ── Theme ──
 function initTheme() {
@@ -273,82 +287,140 @@ function afwPct(subset) {
 // ── Helper: format score delta for display ──
 function fmtDelta(val) { return (val >= 0 ? '+' : '') + val; }
 
+// ── Helper: lookup beslisfactor in trained model ──
+function modelBfLookup(typeModel, factor, value) {
+  // Try type-specific model first, then global model
+  var sources = [];
+  if (typeModel && typeModel.beslisfactoren && typeModel.beslisfactoren[factor]) {
+    sources.push(typeModel.beslisfactoren[factor]);
+  }
+  if (trainedModel && trainedModel.beslisfactoren && trainedModel.beslisfactoren[factor]) {
+    sources.push(trainedModel.beslisfactoren[factor]);
+  }
+  for (var i = 0; i < sources.length; i++) {
+    var data = sources[i][value] || sources[i][String(value)];
+    if (data && data.n >= 3) return data;
+  }
+  return null;
+}
+
 function analyzeCase(input) {
   var score = 50;
   var factors = [];
   var bfAll = uitspraken.filter(function(u) { return u.beslisfactoren; });
   var overallAfwRate = afwPct(uitspraken);
 
-  // ── 1. Base rate: verzekeringtype ──
-  var typeMatches = uitspraken.filter(function(u) { return u.type_verzekering === input.type; });
-  if (typeMatches.length > 0) {
-    var typeRate = afwPct(typeMatches);
-    score = typeRate;
-    factors.push({ label: 'Afwijzingspercentage ' + input.type + ' (n=' + typeMatches.length + ')', value: typeRate + '%', type: typeRate > 60 ? 'pro' : 'con' });
+  // ── Gebruik getraind model voor betere voorspellingen ──
+  var tm = trainedModel; // shorthand
+  var typeModel = tm && tm.per_type ? tm.per_type[input.type] : null;
+  var geschilModel = null;
+  if (typeModel && typeModel.per_kerngeschil) {
+    geschilModel = typeModel.per_kerngeschil[input.dispute] || null;
   }
 
-  // ── 2. Kerngeschil correctie ──
-  var disputeMatches = uitspraken.filter(function(u) { return u.kerngeschil === input.dispute; });
-  if (disputeMatches.length > 0) {
-    var dRate = afwPct(disputeMatches);
-    var adj = Math.round((dRate - 50) * 0.3);
-    score += adj;
-    factors.push({ label: 'Kerngeschil ' + input.dispute + ' (' + dRate + '% afw, n=' + disputeMatches.length + ')', value: fmtDelta(adj), type: adj > 0 ? 'pro' : adj < 0 ? 'con' : 'neutral' });
+  // ── 1. Base rate: verzekeringtype (model of runtime) ──
+  var typeN = 0;
+  if (typeModel) {
+    score = typeModel.afw_pct;
+    typeN = typeModel.n;
+    factors.push({ label: 'Afwijzingspercentage ' + input.type + ' (n=' + typeN + ', model)', value: typeModel.afw_pct + '%', type: typeModel.afw_pct > 60 ? 'pro' : 'con' });
+  } else {
+    var typeMatches = uitspraken.filter(function(u) { return u.type_verzekering === input.type; });
+    typeN = typeMatches.length;
+    if (typeN > 0) {
+      var typeRate = afwPct(typeMatches);
+      score = typeRate;
+      factors.push({ label: 'Afwijzingspercentage ' + input.type + ' (n=' + typeN + ')', value: typeRate + '%', type: typeRate > 60 ? 'pro' : 'con' });
+    }
   }
 
-  // ── 3. Combinatie type + geschil (meest specifiek) ──
+  // ── 2. Kerngeschil correctie (model of runtime) ──
+  var disputeN = 0;
+  if (geschilModel) {
+    var gmRate = geschilModel.afw_pct;
+    disputeN = geschilModel.n;
+    var gmAdj = Math.round((gmRate - score) * 0.35);
+    score += gmAdj;
+    factors.push({ label: input.type + ' + ' + input.dispute + ' (' + gmRate + '% afw, n=' + disputeN + ', model)', value: fmtDelta(gmAdj), type: gmAdj > 0 ? 'pro' : gmAdj < 0 ? 'con' : 'neutral' });
+    // Toewijzingsratio context
+    if (geschilModel.toewijzings_ratio > 0) {
+      factors.push({ label: 'Gem. toewijzingsratio bij dit geschiltype', value: geschilModel.toewijzings_ratio + '%', type: geschilModel.toewijzings_ratio > 30 ? 'con' : 'neutral' });
+    }
+  } else {
+    var disputeMatches = uitspraken.filter(function(u) { return u.kerngeschil === input.dispute; });
+    disputeN = disputeMatches.length;
+    if (disputeN > 0) {
+      var dRate = afwPct(disputeMatches);
+      var adj = Math.round((dRate - 50) * 0.3);
+      score += adj;
+      factors.push({ label: 'Kerngeschil ' + input.dispute + ' (' + dRate + '% afw, n=' + disputeN + ')', value: fmtDelta(adj), type: adj > 0 ? 'pro' : adj < 0 ? 'con' : 'neutral' });
+    }
+  }
+
+  // ── 3. Combinatie type + geschil (runtime fallback als geen model) ──
   var combiMatches = uitspraken.filter(function(u) { return u.type_verzekering === input.type && u.kerngeschil === input.dispute; });
-  if (combiMatches.length >= 3) {
+  if (!geschilModel && combiMatches.length >= 3) {
     var combiRate = afwPct(combiMatches);
     var combiAdj = Math.round((combiRate - score) * 0.4);
     score += combiAdj;
     factors.push({ label: 'Specifiek ' + input.type + ' + ' + input.dispute + ' (n=' + combiMatches.length + ')', value: fmtDelta(combiAdj), type: combiAdj > 0 ? 'pro' : combiAdj < 0 ? 'con' : 'neutral' });
   }
 
-  // ── 4. Beslisfactoren: bewijs consument (data-driven) ──
-  if (input.evidence && bfAll.length >= 5) {
-    var sameEvidence = bfAll.filter(function(u) { return u.beslisfactoren.bewijs_consument === input.evidence; });
-    if (sameEvidence.length >= 3) {
-      var evRate = afwPct(sameEvidence);
-      var evDelta = Math.round((evRate - overallAfwRate) * 0.4);
+  // ── 4. Beslisfactoren: bewijs consument (model of runtime) ──
+  if (input.evidence) {
+    var evData = modelBfLookup(typeModel, 'bewijs_consument', input.evidence);
+    if (evData) {
+      var evBase = typeModel ? typeModel.afw_pct : overallAfwRate;
+      var evDelta = Math.round((evData.afw_pct - evBase) * 0.4);
       score += evDelta;
-      var evLabel = 'Bewijs \u201C' + input.evidence + '\u201D \u2192 ' + evRate + '% afw. (n=' + sameEvidence.length + ')';
-      factors.push({ label: evLabel, value: fmtDelta(evDelta), type: evDelta > 5 ? 'pro' : evDelta < -5 ? 'con' : 'neutral' });
-    } else {
-      // Fallback to heuristic if not enough data
-      var evFallback = input.evidence === 'sterk' ? -12 : input.evidence === 'zwak' ? 12 : 0;
-      if (evFallback !== 0) {
-        score += evFallback;
-        factors.push({ label: 'Bewijs consument: ' + input.evidence, value: fmtDelta(evFallback), type: evFallback > 0 ? 'pro' : 'con' });
+      factors.push({ label: 'Bewijs \u201C' + input.evidence + '\u201D bij ' + (typeModel ? input.type : 'alle') + ' \u2192 ' + evData.afw_pct + '% afw. (n=' + evData.n + ', model)', value: fmtDelta(evDelta), type: evDelta > 5 ? 'pro' : evDelta < -5 ? 'con' : 'neutral' });
+    } else if (bfAll.length >= 5) {
+      var sameEvidence = bfAll.filter(function(u) { return u.beslisfactoren.bewijs_consument === input.evidence; });
+      if (sameEvidence.length >= 3) {
+        var evRate = afwPct(sameEvidence);
+        var evDelta2 = Math.round((evRate - overallAfwRate) * 0.4);
+        score += evDelta2;
+        factors.push({ label: 'Bewijs \u201C' + input.evidence + '\u201D \u2192 ' + evRate + '% afw. (n=' + sameEvidence.length + ')', value: fmtDelta(evDelta2), type: evDelta2 > 5 ? 'pro' : evDelta2 < -5 ? 'con' : 'neutral' });
       }
     }
   }
 
-  // ── 5. Beslisfactoren: deskundigenrapport (data-driven) ──
-  if (input.expert && input.expert !== 'geen' && bfAll.length >= 5) {
-    var sameExpert = bfAll.filter(function(u) { return u.beslisfactoren.deskundigenrapport === input.expert; });
-    if (sameExpert.length >= 3) {
-      var exRate = afwPct(sameExpert);
-      var exDelta = Math.round((exRate - overallAfwRate) * 0.35);
+  // ── 5. Beslisfactoren: deskundigenrapport (model of runtime) ──
+  if (input.expert && input.expert !== 'geen') {
+    var exData = modelBfLookup(typeModel, 'deskundigenrapport', input.expert);
+    if (exData) {
+      var exBase = typeModel ? typeModel.afw_pct : overallAfwRate;
+      var exDelta = Math.round((exData.afw_pct - exBase) * 0.35);
       score += exDelta;
-      factors.push({ label: 'Deskundigenrapport \u201C' + input.expert + '\u201D \u2192 ' + exRate + '% afw. (n=' + sameExpert.length + ')', value: fmtDelta(exDelta), type: exDelta > 3 ? 'pro' : exDelta < -3 ? 'con' : 'neutral' });
-    } else {
-      var exFallback = input.expert === 'verzekeraar' ? 8 : input.expert === 'consument' ? -8 : -2;
-      score += exFallback;
-      factors.push({ label: 'Deskundigenrapport: ' + input.expert, value: fmtDelta(exFallback), type: exFallback > 0 ? 'pro' : 'con' });
+      factors.push({ label: 'Deskundigenrapport \u201C' + input.expert + '\u201D bij ' + (typeModel ? input.type : 'alle') + ' \u2192 ' + exData.afw_pct + '% afw. (n=' + exData.n + ', model)', value: fmtDelta(exDelta), type: exDelta > 3 ? 'pro' : exDelta < -3 ? 'con' : 'neutral' });
+    } else if (bfAll.length >= 5) {
+      var sameExpert = bfAll.filter(function(u) { return u.beslisfactoren.deskundigenrapport === input.expert; });
+      if (sameExpert.length >= 3) {
+        var exRate = afwPct(sameExpert);
+        var exDelta2 = Math.round((exRate - overallAfwRate) * 0.35);
+        score += exDelta2;
+        factors.push({ label: 'Deskundigenrapport \u201C' + input.expert + '\u201D \u2192 ' + exRate + '% afw. (n=' + sameExpert.length + ')', value: fmtDelta(exDelta2), type: exDelta2 > 3 ? 'pro' : exDelta2 < -3 ? 'con' : 'neutral' });
+      }
     }
   }
 
-  // ── 6. Beslisfactoren: polisvoorwaarden duidelijkheid (data-driven) ──
-  if (bfAll.length >= 5) {
+  // ── 6. Beslisfactoren: polisvoorwaarden duidelijkheid (model of runtime) ──
+  var pvdData = modelBfLookup(typeModel, 'polisvoorwaarden_duidelijk', 'true');
+  var pvuData = modelBfLookup(typeModel, 'polisvoorwaarden_duidelijk', 'false');
+  if (pvdData && pvuData) {
+    var verschil = pvdData.afw_pct - pvuData.afw_pct;
+    if (Math.abs(verschil) >= 5) {
+      factors.push({ label: 'Onduidelijke voorwaarden \u2192 ' + pvuData.afw_pct + '% afw. vs. duidelijk ' + pvdData.afw_pct + '% (n=' + pvuData.n + '/' + pvdData.n + ', model)', value: '\u0394' + Math.abs(Math.round(verschil)) + '%', type: verschil > 0 ? 'con' : 'pro' });
+    }
+  } else if (bfAll.length >= 5) {
     var onduidelijk = bfAll.filter(function(u) { return u.beslisfactoren.polisvoorwaarden_duidelijk === false; });
     var duidelijk = bfAll.filter(function(u) { return u.beslisfactoren.polisvoorwaarden_duidelijk === true; });
     if (onduidelijk.length >= 3 && duidelijk.length >= 3) {
       var ondRate = afwPct(onduidelijk);
       var duiRate = afwPct(duidelijk);
-      var verschil = duiRate - ondRate;
-      if (Math.abs(verschil) >= 10) {
-        factors.push({ label: 'Onduidelijke voorwaarden \u2192 ' + ondRate + '% afw. vs. duidelijk ' + duiRate + '% (n=' + onduidelijk.length + '/' + duidelijk.length + ')', value: '\u0394' + Math.abs(verschil) + '%', type: verschil > 0 ? 'con' : 'pro' });
+      var verschil2 = duiRate - ondRate;
+      if (Math.abs(verschil2) >= 10) {
+        factors.push({ label: 'Onduidelijke voorwaarden \u2192 ' + ondRate + '% afw. vs. duidelijk ' + duiRate + '% (n=' + onduidelijk.length + '/' + duidelijk.length + ')', value: '\u0394' + Math.abs(verschil2) + '%', type: verschil2 > 0 ? 'con' : 'pro' });
       }
     }
   }
@@ -472,6 +544,32 @@ function analyzeCase(input) {
     }
   }
 
+  // ── 14. Factor-combinaties uit model ──
+  var modelCombos = typeModel ? typeModel.factor_combinaties : (tm ? tm.factor_combinaties : []);
+  if (modelCombos && modelCombos.length > 0) {
+    // Vind combinaties die matchen met de input
+    var matchedCombo = modelCombos.filter(function(c) {
+      var f = c.factoren || '';
+      var matches = true;
+      if (f.indexOf('bewijs_consument=' + input.evidence) !== -1) matches = true;
+      else if (f.indexOf('bewijs_consument=') !== -1) matches = false;
+      if (f.indexOf('deskundigenrapport=' + input.expert) !== -1) matches = matches && true;
+      else if (f.indexOf('deskundigenrapport=') !== -1) matches = false;
+      if (input.goodwill !== 'nee' && f.indexOf('coulance_aangeboden=ja') !== -1) matches = matches && true;
+      else if (input.goodwill === 'nee' && f.indexOf('coulance_aangeboden=nee') !== -1) matches = matches && true;
+      else if (f.indexOf('coulance_aangeboden=') !== -1) matches = false;
+      return matches;
+    });
+    if (matchedCombo.length > 0) {
+      var best = matchedCombo[0]; // Highest impact
+      var cmbAdj = Math.round(best.impact * 0.25);
+      if (Math.abs(cmbAdj) >= 3) {
+        score += cmbAdj;
+        factors.push({ label: 'Factor-combinatie: ' + best.factoren + ' \u2192 ' + best.afw_pct + '% afw. (n=' + best.n + ', model)', value: fmtDelta(cmbAdj), type: cmbAdj > 3 ? 'pro' : cmbAdj < -3 ? 'con' : 'neutral' });
+      }
+    }
+  }
+
   score = Math.max(5, Math.min(95, score));
 
   // ── Betrouwbaarheid ──
@@ -479,16 +577,24 @@ function analyzeCase(input) {
   var bfRelevant = bfAll.filter(function(u) { return u.type_verzekering === input.type || u.kerngeschil === input.dispute; }).length;
   var confidence = 'laag';
   var confidencePct = 20;
+  // Model geeft flinke boost
+  if (typeModel) {
+    confidencePct = 50;
+    if (typeModel.n >= 100) confidencePct = 70;
+    if (typeModel.n >= 300) confidencePct = 80;
+    if (geschilModel && geschilModel.n >= 10) confidencePct = Math.min(95, confidencePct + 10);
+  }
   // Meer data = meer betrouwbaar
-  if (relevantMatches >= 30) { confidence = 'hoog'; confidencePct = 85; }
-  else if (relevantMatches >= 15) { confidence = 'hoog'; confidencePct = 75; }
-  else if (relevantMatches >= 8) { confidence = 'gemiddeld'; confidencePct = 60; }
-  else if (relevantMatches >= 4) { confidence = 'beperkt'; confidencePct = 40; }
+  if (relevantMatches >= 30) { confidence = 'hoog'; confidencePct = Math.max(confidencePct, 85); }
+  else if (relevantMatches >= 15) { confidence = 'hoog'; confidencePct = Math.max(confidencePct, 75); }
+  else if (relevantMatches >= 8) { confidence = 'gemiddeld'; confidencePct = Math.max(confidencePct, 60); }
+  else if (relevantMatches >= 4) { confidence = 'beperkt'; confidencePct = Math.max(confidencePct, 40); }
   // Bonus voor beschikbare beslisfactoren
-  if (bfRelevant >= 10) confidencePct = Math.min(95, confidencePct + 10);
-  else if (bfRelevant >= 5) confidencePct = Math.min(95, confidencePct + 5);
-  // Bonus voor type+geschil combo
-  if (combiMatches.length >= 5) confidencePct = Math.min(95, confidencePct + 8);
+  if (bfRelevant >= 10) confidencePct = Math.min(95, confidencePct + 5);
+  // Confidence label
+  if (confidencePct >= 75) confidence = 'hoog';
+  else if (confidencePct >= 55) confidence = 'gemiddeld';
+  else if (confidencePct >= 35) confidence = 'beperkt';
   if (policyAnalysis) confidencePct = Math.min(95, confidencePct + 10);
 
   // ── Vergelijkbare uitspraken (verbeterde relevantie) ──
