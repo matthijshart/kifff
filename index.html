@@ -274,21 +274,21 @@
   <div id="tab-data" role="tabpanel" style="display:none;">
     <div class="panel" style="max-width:800px;margin:0 auto 24px;">
       <div class="panel-title">KIFID Uitsprakenregister</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px;">
-        <div style="background:var(--bg-card);padding:20px 24px;text-align:center;">
-          <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;" data-count="14387" data-suffix="+">0</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:4px;font-weight:500;">Openbare uitspraken</div>
+      <div class="data-stats-grid">
+        <div class="data-stat">
+          <div class="data-stat-value" data-count="14387" data-suffix="+">0</div>
+          <div class="data-stat-label">Openbare uitspraken</div>
         </div>
-        <div style="background:var(--bg-card);padding:20px 24px;text-align:center;">
-          <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">2007 &ndash; nu</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:4px;font-weight:500;">Periode</div>
+        <div class="data-stat">
+          <div class="data-stat-value">2007 &ndash; nu</div>
+          <div class="data-stat-label">Periode</div>
         </div>
-        <div style="background:var(--bg-card);padding:20px 24px;text-align:center;">
-          <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">Publiek</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:4px;font-weight:500;">Vrij toegankelijk</div>
+        <div class="data-stat">
+          <div class="data-stat-value">Publiek</div>
+          <div class="data-stat-label">Vrij toegankelijk</div>
         </div>
       </div>
-      <div style="display:flex;gap:12px;margin-bottom:14px;">
+      <div class="lookup-bar">
         <input type="text" id="kifidLookup" placeholder="Zoek op uitspraaknummer, bijv. 2024-1029" style="flex:1;">
         <button class="btn-predict" onclick="lookupKifid()" style="width:auto;margin-top:0;padding:11px 24px;">Opzoeken</button>
       </div>

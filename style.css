@@ -91,7 +91,9 @@ body {
   font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
   transition: background 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
 }
 
 /* ── Navigation ── */
@@ -864,6 +866,42 @@ a.case-row-link:hover .case-nr { color: var(--primary); }
 .upload-zone p { color: var(--text-muted); font-size: 14px; }
 .upload-zone .formats { font-size: 12px; color: var(--text-dim); margin-top: 8px; }
 
+.data-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.data-stat {
+  background: var(--bg-card);
+  padding: 20px 24px;
+  text-align: center;
+}
+
+.data-stat-value {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.data-stat-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.lookup-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
 .data-status {
   display: flex; align-items: center; gap: 10px;
   padding: 13px 18px;
@@ -971,27 +1009,65 @@ code {
 }
 
 @media (max-width: 768px) {
-  .nav { padding: 0 20px; }
+  .nav { padding: 0 16px; gap: 8px; }
   .nav-link { display: none; }
-  .hero { padding: 64px 20px 56px; }
-  .hero h1 { font-size: 34px; letter-spacing: -1px; }
-  .hero-sub { font-size: 16px; }
+  .nav-cta { padding: 8px 16px; font-size: 13px; margin-left: 4px; }
+  .nav-name { font-size: 14px; }
+  .hero { padding: 56px 20px 48px; }
+  .hero h1 { font-size: 32px; letter-spacing: -1px; }
+  .hero-sub { font-size: 15px; }
   .hero-actions { flex-direction: column; align-items: stretch; }
+  .hero-actions .btn-primary,
+  .hero-actions .btn-ghost { text-align: center; justify-content: center; }
   .hero-metrics { grid-template-columns: 1fr 1fr; }
-  .benefits { padding: 64px 20px; }
+  .metric { padding: 20px 16px; }
+  .metric-value { font-size: 28px; }
+  .benefits { padding: 56px 20px; }
   .benefits-grid { grid-template-columns: 1fr; }
-  .how-section { padding: 64px 20px; }
+  .benefit-card { padding: 28px 24px; }
+  .how-section { padding: 56px 20px; }
   .steps-grid { grid-template-columns: 1fr; gap: 20px; }
-  .tool-section { padding: 64px 20px; }
+  .tool-section { padding: 48px 16px; }
+  .panel { padding: 24px 20px; }
+  .panel-title { font-size: 16px; margin-bottom: 22px; padding-bottom: 14px; }
+  .tab-bar { width: 100%; justify-content: center; }
+  .tab-btn { padding: 10px 20px; font-size: 13px; }
   .analysis-grid { grid-template-columns: 1fr; }
-  .trust-inner { gap: 24px; flex-direction: column; align-items: center; }
+  .analysis-card[style*="grid-column"] { grid-column: span 1 !important; }
+  .trust-section { padding: 40px 20px; }
+  .trust-inner { gap: 20px; flex-direction: column; align-items: center; }
+  .footer { padding: 40px 20px; }
   .footer-inner { flex-direction: column; gap: 20px; text-align: center; }
-  .section-title { font-size: 30px; }
+  .footer-links { justify-content: center; }
+  .section-title { font-size: 28px; }
+  .section-desc { font-size: 15px; }
+  .data-stats-grid { grid-template-columns: 1fr; }
+  .data-stat { padding: 14px 20px; }
+  .data-stat-value { font-size: 20px; }
+  .lookup-bar { flex-direction: column; }
+  .lookup-bar .btn-predict { width: 100% !important; }
+  /* Prevent iOS auto-zoom on input focus */
+  select, input[type="text"], input[type="number"], textarea { font-size: 16px; }
 }
 
 @media (max-width: 480px) {
-  .hero h1 { font-size: 28px; }
-  .hero-metrics { grid-template-columns: 1fr; }
-  .metric { padding: 20px 24px; }
+  .nav-name { font-size: 13px; }
+  .hero { padding: 48px 16px 40px; }
+  .hero h1 { font-size: 26px; letter-spacing: -0.8px; }
+  .hero-eyebrow { font-size: 11px; padding: 5px 14px 5px 7px; }
+  .hero-metrics { grid-template-columns: 1fr 1fr; gap: 1px; }
+  .metric { padding: 16px 12px; }
+  .metric-value { font-size: 24px; letter-spacing: -1px; }
+  .metric-label { font-size: 11px; }
+  .benefits { padding: 48px 16px; }
+  .benefit-card { padding: 24px 20px; }
+  .how-section { padding: 48px 16px; }
+  .tool-section { padding: 40px 12px; }
+  .panel { padding: 20px 16px; border-radius: var(--radius-lg); }
   .field-row { grid-template-columns: 1fr; }
+  .section-title { font-size: 24px; }
+  .btn-predict { font-size: 14px; padding: 12px 16px; }
+  .case-row { grid-template-columns: auto 1fr auto; gap: 8px; font-size: 12px; }
+  .case-desc { display: none; }
+  .trust-item { font-size: 13px; }
 }
