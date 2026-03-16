@@ -177,19 +177,24 @@ def parse_pdf_with_claude(
                 ],
             )
             break  # success
-        except anthropic.RateLimitError as e:
-            wait = INITIAL_BACKOFF * (2 ** attempt)
-            log.warning(
-                "Rate limited for %s (attempt %d/%d), waiting %.0fs...",
-                pdf_path.name, attempt + 1, MAX_RETRIES, wait,
+        except (anthropic.RateLimitError, anthropic.APIError) as e:
+            is_rate_limit = (
+                isinstance(e, anthropic.RateLimitError)
+                or (hasattr(e, "status_code") and e.status_code == 429)
             )
-            if attempt + 1 >= MAX_RETRIES:
-                log.error("Max retries reached for %s: %s", pdf_path.name, e)
+            if is_rate_limit:
+                wait = INITIAL_BACKOFF * (2 ** attempt)
+                log.warning(
+                    "Rate limited for %s (attempt %d/%d), waiting %.0fs...",
+                    pdf_path.name, attempt + 1, MAX_RETRIES, wait,
+                )
+                if attempt + 1 >= MAX_RETRIES:
+                    log.error("Max retries reached for %s: %s", pdf_path.name, e)
+                    return None
+                time.sleep(wait)
+            else:
+                log.error("API error for %s: %s", pdf_path.name, e)
                 return None
-            time.sleep(wait)
-        except anthropic.APIError as e:
-            log.error("API error for %s: %s", pdf_path.name, e)
-            return None
 
     if response is None:
         return None
@@ -357,8 +362,8 @@ def main():
             print(f"  Would parse: {p.name} ({p.stat().st_size // 1024} KB)")
         return
 
-    # Init API client
-    client = anthropic.Anthropic(api_key=api_key)
+    # Init API client (disable SDK internal retries so we handle backoff ourselves)
+    client = anthropic.Anthropic(api_key=api_key, max_retries=0)
     model = args.model
 
     dataset = load_dataset()
