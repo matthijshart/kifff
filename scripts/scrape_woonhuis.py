@@ -30,13 +30,24 @@ except ImportError:
 
 API_BASE = "https://www.kifid.nl/api/Search/SearchDecision/"
 
-# Zoektermen die woonhuisverzekeringen opleveren
+# Zoektermen die woonhuisverzekeringen opleveren.
+# Meerdere termen zorgen voor brede dekking – duplicaten worden gefilterd.
 SEARCH_TERMS = [
     "woonhuisverzekering",
     "opstalverzekering",
     "inboedelverzekering",
     "woonverzekering",
+    "waterschade woning",
+    "brandschade woning",
+    "stormschade woning",
+    "lekkage woning",
+    "woningschade",
+    "huiseigenaar verzekering",
+    "glasverzekering woning",
 ]
+
+# Minimum aantal gewenste resultaten
+MIN_TARGET = 200
 
 PAGE_SIZE = 100
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "uitspraken")
@@ -129,24 +140,29 @@ def extract_datum(item: dict) -> str:
     return date_str
 
 
-def determine_type_verzekering(item: dict) -> str:
-    """Bepaal het type verzekering op basis van tekst."""
+# Trefwoorden die aangeven dat een uitspraak over woonhuisverzekering gaat
+WOONHUIS_KEYWORDS = [
+    "woonhuisverzekering", "opstalverzekering", "inboedelverzekering",
+    "woonverzekering", "opstal", "inboedel", "woonhuis",
+    "woningverzekering", "huiseigenaar", "glasverzekering",
+    "waterschade", "brandschade", "stormschade", "lekkage",
+    "woningschade", "riool", "fundering", "dakschade",
+    "leidingwater", "overstroming", "inbraakschade",
+]
+
+
+def is_woonhuis_related(item: dict) -> bool:
+    """Check of een uitspraak gerelateerd is aan woonhuisverzekering."""
     text = (
         item.get("pdfContent", "")
-        + " "
-        + item.get("summary", "")
-        + " "
-        + item.get("title", "")
+        + " " + item.get("summary", "")
+        + " " + item.get("title", "")
     ).lower()
+    return any(kw in text for kw in WOONHUIS_KEYWORDS)
 
-    if "opstal" in text:
-        return "woonhuisverzekering"
-    if "inboedel" in text:
-        return "woonhuisverzekering"
-    if "woonhuis" in text:
-        return "woonhuisverzekering"
-    if "brand" in text and ("woning" in text or "huis" in text):
-        return "woonhuisverzekering"
+
+def determine_type_verzekering(item: dict) -> str:
+    """Bepaal het type verzekering op basis van tekst."""
     return "woonhuisverzekering"
 
 
@@ -190,33 +206,78 @@ def item_to_uitspraak(item: dict) -> dict:
     return uitspraak
 
 
-def main():
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-    # Verzamel alle unieke items over alle zoektermen
-    seen_ids = set()
-    all_raw_items = []
-
-    for term in SEARCH_TERMS:
+def collect_items(search_terms: List[str], seen_ids: set) -> List[dict]:
+    """Haal items op voor een lijst zoektermen, dedupliceer op basis van seen_ids."""
+    new_items = []
+    for term in search_terms:
         items = fetch_all(term)
         for item in items:
             item_id = item.get("statementLink", "") or item.get("title", "")
-            if item_id not in seen_ids:
+            if item_id and item_id not in seen_ids:
                 seen_ids.add(item_id)
-                all_raw_items.append(item)
-            else:
-                print(f"  Duplicaat overgeslagen: {item_id[:60]}")
+                new_items.append(item)
+    return new_items
 
-    print(f"\nTotaal unieke resultaten: {len(all_raw_items)}")
+
+# Extra zoektermen als de eerste ronde niet genoeg oplevert
+FALLBACK_TERMS = [
+    "schade woning verzekering",
+    "huis schade claim",
+    "pand verzekering",
+    "gebouwverzekering",
+    "eigenaar woning schade",
+    "cv ketel schade",
+    "schimmel woning",
+    "verzakking woning",
+    "dakgoot schade",
+]
+
+
+def main():
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    seen_ids: set = set()
+
+    # Ronde 1: primaire zoektermen
+    print("=== Ronde 1: Primaire zoektermen ===")
+    all_raw_items = collect_items(SEARCH_TERMS, seen_ids)
+    print(f"\nRonde 1: {len(all_raw_items)} unieke resultaten gevonden")
+
+    # Filter op relevantie
+    relevant_items = [item for item in all_raw_items if is_woonhuis_related(item)]
+    print(f"Relevant na filter: {len(relevant_items)}")
+
+    # Ronde 2: fallback als we onder target zitten
+    if len(relevant_items) < MIN_TARGET:
+        print(f"\n=== Ronde 2: Extra zoektermen (target: {MIN_TARGET}) ===")
+        extra_items = collect_items(FALLBACK_TERMS, seen_ids)
+        extra_relevant = [item for item in extra_items if is_woonhuis_related(item)]
+        relevant_items.extend(extra_relevant)
+        all_raw_items.extend(extra_items)
+        print(f"Extra relevant: {len(extra_relevant)}, totaal relevant: {len(relevant_items)}")
+
+    # Ronde 3: breedste zoekopdracht als we nog steeds onder target zitten
+    if len(relevant_items) < MIN_TARGET:
+        print(f"\n=== Ronde 3: Brede categorie-zoekopdracht ===")
+        # Zoek alle verzekeringen en filter dan op woonhuis-keywords
+        broad_items = collect_items(["verzekering schade"], seen_ids)
+        broad_relevant = [item for item in broad_items if is_woonhuis_related(item)]
+        relevant_items.extend(broad_relevant)
+        all_raw_items.extend(broad_items)
+        print(f"Breed relevant: {len(broad_relevant)}, totaal relevant: {len(relevant_items)}")
+
+    print(f"\n{'='*50}")
+    print(f"Totaal unieke API-resultaten: {len(all_raw_items)}")
+    print(f"Woonhuis-gerelateerd: {len(relevant_items)}")
 
     # Sla ruwe data op
     raw_path = os.path.join(OUTPUT_DIR, "woonhuis_raw.json")
     with open(raw_path, "w", encoding="utf-8") as f:
-        json.dump(all_raw_items, f, ensure_ascii=False, indent=2)
+        json.dump(relevant_items, f, ensure_ascii=False, indent=2)
     print(f"Ruwe data opgeslagen: {raw_path}")
 
     # Converteer naar dataset-formaat
-    uitspraken = [item_to_uitspraak(item) for item in all_raw_items]
+    uitspraken = [item_to_uitspraak(item) for item in relevant_items]
 
     dataset = {
         "meta": {
@@ -225,6 +286,7 @@ def main():
             "aantal": len(uitspraken),
             "bron": "KIFID API - woonhuisverzekering uitspraken",
             "beschrijving": "Woonhuisverzekering uitspraken gescraped via KIFID API",
+            "zoektermen_gebruikt": SEARCH_TERMS + FALLBACK_TERMS,
         },
         "uitspraken": uitspraken,
     }
@@ -236,10 +298,13 @@ def main():
 
     # Toon samenvatting
     print(f"\n--- Samenvatting ---")
-    print(f"Zoektermen: {', '.join(SEARCH_TERMS)}")
     print(f"Unieke uitspraken: {len(uitspraken)}")
+    if len(uitspraken) >= MIN_TARGET:
+        print(f"Target van {MIN_TARGET} behaald!")
+    else:
+        print(f"Let op: target van {MIN_TARGET} niet behaald ({len(uitspraken)} gevonden)")
 
-    uitkomsten = {}
+    uitkomsten: Dict[str, int] = {}
     for u in uitspraken:
         uitkomsten[u["uitkomst"]] = uitkomsten.get(u["uitkomst"], 0) + 1
     for k, v in sorted(uitkomsten.items()):
