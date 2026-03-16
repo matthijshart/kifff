@@ -822,7 +822,8 @@ a.case-row-link { text-decoration: none; color: inherit; border-radius: var(--ra
 a.case-row-link:hover { background: var(--bg-alt); }
 a.case-row-link:hover .case-nr { color: var(--primary); }
 .case-nr { font-size: 12px; color: var(--text-secondary); white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
-.case-desc { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.case-desc { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.case-desc .case-grondslag { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .case-outcome {
   font-size: 11px;

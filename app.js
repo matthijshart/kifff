@@ -20,7 +20,13 @@ async function autoLoadModel() {
     var response = await fetch('data/model.json');
     if (!response.ok) return;
     trainedModel = await response.json();
-    console.log('Model geladen: ' + (trainedModel.meta || {}).totaal_uitspraken + ' uitspraken getraind');
+    var n = (trainedModel.meta || {}).totaal_uitspraken || 0;
+    console.log('Model geladen: ' + n + ' uitspraken getraind');
+    // Show model status in UI
+    var statusEl = document.getElementById('dataStatus');
+    if (statusEl && uitspraken.length > 0) {
+      statusEl.textContent = uitspraken.length + ' uitspraken geladen, model getraind op ' + n + ' zaken.';
+    }
   } catch (e) {
     console.log('Geen getraind model gevonden, runtime analyse wordt gebruikt.');
   }
@@ -158,10 +164,16 @@ function updateHeroStats() {
     }
   });
   // Update first metric (total analyzed)
-  var firstMetric = document.querySelector('.metric-value[data-count]');
-  if (firstMetric && !firstMetric.id) {
-    firstMetric.dataset.count = total;
-    firstMetric.textContent = total + '+';
+  var allMetrics = document.querySelectorAll('.metric-value[data-count]:not([id])');
+  if (allMetrics.length >= 1) {
+    allMetrics[0].dataset.count = total;
+    allMetrics[0].textContent = total + '+';
+  }
+  // Update last metric (woonhuisverzekering count)
+  if (allMetrics.length >= 2) {
+    var woonhuis = uitspraken.filter(function(u) { return u.type_verzekering === 'woonhuisverzekering'; }).length;
+    allMetrics[1].dataset.count = woonhuis;
+    allMetrics[1].textContent = woonhuis;
   }
 }
 
