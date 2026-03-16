@@ -412,7 +412,8 @@ function renderResults(result, input) {
   if (sim.length > 0) {
     html += '<div class="similar-cases animate-in delay-3"><h3>Vergelijkbare uitspraken</h3>' +
       sim.map(function(c) {
-        return '<div class="case-row"><span class="case-nr">' + c.nr + '</span><span class="case-desc">' + c.desc + '</span><span class="case-outcome ' + c.outcome + '">' + c.outcome + '</span><span class="case-relevance">' + c.relevance + '</span></div>';
+        var kifidUrl = 'https://www.kifid.nl/uitspraken/?zoekterm=' + encodeURIComponent(c.nr);
+        return '<a href="' + kifidUrl + '" target="_blank" rel="noopener" class="case-row case-row-link"><span class="case-nr">' + c.nr + '</span><span class="case-desc">' + c.desc + '</span><span class="case-outcome ' + c.outcome + '">' + c.outcome + '</span><span class="case-relevance">' + c.relevance + ' <svg style="width:14px;height:14px;vertical-align:middle;opacity:0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span></a>';
       }).join('') + '</div>';
   }
 
