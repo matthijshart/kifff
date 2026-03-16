@@ -366,7 +366,7 @@ function analyzeCase(input) {
         if (u.beslisfactoren.bewijs_consument === input.evidence) rel += 10;
         if (u.beslisfactoren.deskundigenrapport === input.expert) rel += 10;
       }
-      return { nr: u.uitspraaknr, desc: u.samenvatting || '', outcome: u.uitkomst, relevance: rel + '%' };
+      return { nr: u.uitspraaknr, desc: u.samenvatting || '', outcome: u.uitkomst, relevance: rel + '%', pdfUrl: u.pdf_url || '' };
     })
     .sort(function(a, b) { return parseInt(b.relevance) - parseInt(a.relevance); })
     .slice(0, 6);
@@ -412,7 +412,7 @@ function renderResults(result, input) {
   if (sim.length > 0) {
     html += '<div class="similar-cases animate-in delay-3"><h3>Vergelijkbare uitspraken</h3>' +
       sim.map(function(c) {
-        var kifidUrl = 'https://www.kifid.nl/uitspraken/?zoekterm=' + encodeURIComponent(c.nr);
+        var kifidUrl = c.pdfUrl || ('https://www.kifid.nl/kifid-kennis-en-uitspraken/uitspraken/?SearchTerm=' + encodeURIComponent('uitspraak-' + c.nr));
         return '<a href="' + kifidUrl + '" target="_blank" rel="noopener" class="case-row case-row-link"><span class="case-nr">' + c.nr + '</span><span class="case-desc">' + c.desc + '</span><span class="case-outcome ' + c.outcome + '">' + c.outcome + '</span><span class="case-relevance">' + c.relevance + ' <svg style="width:14px;height:14px;vertical-align:middle;opacity:0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span></a>';
       }).join('') + '</div>';
   }
@@ -520,7 +520,7 @@ function lookupKifid() {
   } else {
     el.innerHTML =
       '<div style="padding:16px 20px;background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius);margin-top:12px;">' +
-        '<p style="font-size:14px;color:var(--text-muted);">Niet gevonden in lokale data (' + uitspraken.length + ' uitspraken). <a href="https://www.kifid.nl/uitspraken/" target="_blank" style="color:var(--primary);">Zoek op kifid.nl</a></p>' +
+        '<p style="font-size:14px;color:var(--text-muted);">Niet gevonden in lokale data (' + uitspraken.length + ' uitspraken). <a href="https://www.kifid.nl/kifid-kennis-en-uitspraken/uitspraken/?SearchTerm=' + encodeURIComponent('uitspraak-' + nr) + '" target="_blank" style="color:var(--primary);">Zoek op kifid.nl</a></p>' +
       '</div>';
   }
 }
