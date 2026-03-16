@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="KIFID Predictor - AI-gestuurde voorspelling van KIFID-uitspraken voor verzekeraars. Analyseer polisvoorwaarden en beoordeel geschilrisico.">
-<title>KIFID Predictor &mdash; AI-gestuurde Uitspraakvoorspelling voor Verzekeraars</title>
+<meta name="description" content="KIFID Predictor — AI-gestuurde voorspelling van KIFID-uitspraken. Bespaar proceskosten, detecteer risicoclausules en ontvang onderbouwde adviezen.">
+<title>KIFID Predictor &mdash; AI-gestuurde Uitspraakvoorspelling</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,125 +12,143 @@
 <!-- Navigation -->
 <nav class="nav">
   <a href="#" class="nav-brand">
-    <div class="nav-logo">KP</div>
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
     <span class="nav-name">KIFID Predictor</span>
   </a>
   <div class="nav-links">
-    <button class="nav-link" onclick="scrollToFeatures()">Voordelen</button>
-    <button class="nav-link" onclick="scrollToTool()">Predictor</button>
-    <button class="nav-link" onclick="switchTab('insights'); scrollToTool();">Inzichten</button>
-    <button class="nav-cta" onclick="scrollToTool()">Start analyse</button>
+    <button class="nav-link" onclick="scrollTo('features')">Voordelen</button>
+    <button class="nav-link" onclick="scrollTo('tool-section')">Predictor</button>
+    <button class="nav-link" onclick="switchTab('insights'); scrollTo('tool-section');">Inzichten</button>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Wissel thema" id="themeToggle">
+      <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg id="iconMoon" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <button class="nav-cta" onclick="scrollTo('tool-section')">Start analyse</button>
   </div>
 </nav>
 
 <!-- Hero -->
 <section class="hero">
   <div class="hero-inner">
-    <div class="hero-badge">
-      <span class="hero-badge-dot"></span>
-      Operationeel &mdash; Data-driven analyse
+    <div class="hero-eyebrow">
+      <span class="eyebrow-dot"></span>
+      Gebaseerd op openbare KIFID-uitspraken
     </div>
-    <h1>Voorspel KIFID-uitspraken<br>met <span>AI-precisie</span></h1>
+    <h1>Voorspel KIFID-uitspraken met <span class="gradient">AI-precisie</span></h1>
     <p class="hero-sub">
-      Bespaar tijd en geld door vooraf te weten hoe KIFID oordeelt.
-      Analyseer polisvoorwaarden, vergelijk met historische uitspraken
-      en ontvang een onderbouwd advies: uitkeren of procedure afwachten.
+      Bespaar proceskosten door vooraf te weten hoe KIFID oordeelt.
+      Vergelijk met historische uitspraken en ontvang direct een onderbouwd advies.
     </p>
     <div class="hero-actions">
-      <button class="btn-hero btn-hero-primary" onclick="scrollToTool()">
+      <button class="btn-primary" onclick="scrollTo('tool-section')">
         Gratis analyse starten
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
-      <button class="btn-hero btn-hero-secondary" onclick="scrollToFeatures()">
-        Bekijk voordelen
-      </button>
+      <button class="btn-ghost" onclick="scrollTo('features')">Bekijk voordelen</button>
     </div>
-    <div class="hero-stats">
-      <div>
-        <div class="hero-stat-value" id="heroStatTotal">80+</div>
-        <div class="hero-stat-label">Geanalyseerde uitspraken</div>
+    <div class="hero-metrics">
+      <div class="metric">
+        <div class="metric-value" data-count="82" data-suffix="+">0</div>
+        <div class="metric-label">Geanalyseerde uitspraken</div>
       </div>
-      <div>
-        <div class="hero-stat-value" id="heroStatConsumer">43%</div>
-        <div class="hero-stat-label">Consument krijgt gelijk</div>
+      <div class="metric">
+        <div class="metric-value" id="heroStatConsumer" data-count="43" data-suffix="%">0</div>
+        <div class="metric-label">Consument krijgt gelijk</div>
       </div>
-      <div>
-        <div class="hero-stat-value" id="heroStatInsurer">57%</div>
-        <div class="hero-stat-label">Verzekeraar krijgt gelijk</div>
+      <div class="metric">
+        <div class="metric-value" id="heroStatInsurer" data-count="57" data-suffix="%">0</div>
+        <div class="metric-label">Verzekeraar krijgt gelijk</div>
       </div>
-      <div>
-        <div class="hero-stat-value">14.000+</div>
-        <div class="hero-stat-label">KIFID-uitspraken beschikbaar</div>
+      <div class="metric">
+        <div class="metric-value" data-count="14387" data-suffix="+">0</div>
+        <div class="metric-label">KIFID-uitspraken beschikbaar</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Features -->
-<section class="features" id="features">
-  <div class="section-label">Voordelen</div>
-  <h2 class="section-title">Waarom KIFID Predictor?</h2>
-  <p class="section-sub">
-    Maak betere beslissingen bij verzekeringsgeschillen. Onze AI analyseert patronen in duizenden KIFID-uitspraken.
+<!-- Benefits -->
+<section class="benefits" id="features">
+  <div class="section-eyebrow">Voordelen voor verzekeraars</div>
+  <h2 class="section-title">Slimmer beslissen bij geschillen</h2>
+  <p class="section-desc">
+    Neem betere beslissingen over KIFID-geschillen op basis van data, niet op gevoel.
   </p>
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon blue">&#x1F4CA;</div>
-      <h3>Data-gedreven voorspelling</h3>
-      <p>Gebaseerd op echte KIFID-uitspraken. Geen aannames, maar statistische patronen uit honderden geschillen.</p>
+  <div class="benefits-grid">
+    <div class="benefit-card">
+      <div class="benefit-icon indigo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <h3>Lagere proceskosten</h3>
+      <p>Weet vooraf of een procedure kansrijk is. Voorkom onnodige juridische kosten bij geschillen die u waarschijnlijk verliest.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon green">&#x1F4B0;</div>
-      <h3>Bespaar op proceskosten</h3>
-      <p>Weet vooraf of een procedure kansrijk is. Voorkom onnodige juridische kosten en langlopende geschillen.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon amber">&#x26A0;&#xFE0F;</div>
+    <div class="benefit-card">
+      <div class="benefit-icon emerald">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
       <h3>Risicoclausules detecteren</h3>
-      <p>Upload polisvoorwaarden en laat AI risicovolle clausules identificeren die tot geschillen leiden.</p>
+      <p>Upload polisvoorwaarden en laat AI risicovolle clausules identificeren die vaak tot KIFID-geschillen leiden.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon purple">&#x2696;&#xFE0F;</div>
+    <div class="benefit-card">
+      <div class="benefit-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <h3>Direct resultaat</h3>
+      <p>Geen weken wachten op juridisch advies. Ontvang binnen seconden een onderbouwde inschatting met vergelijkbare zaken.</p>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-icon indigo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <h3>Data-gedreven advies</h3>
+      <p>Gebaseerd op echte KIFID-uitspraken. Statistische patronen uit honderden geschillen, geen aannames.</p>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-icon emerald">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <h3>Betere schikkingen</h3>
+      <p>Onderbouw uw schikkingsvoorstel met data. Weet wanneer uitkeren voordeliger is dan procederen.</p>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
       <h3>Vergelijkbare zaken</h3>
-      <p>Vind automatisch vergelijkbare uitspraken. Zie hoe KIFID oordeelde in soortgelijke gevallen.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon rose">&#x23F1;&#xFE0F;</div>
-      <h3>Analyse in seconden</h3>
-      <p>Direct resultaat. Geen weken wachten op een juridisch advies &mdash; ontvang een inschatting binnen 2 seconden.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon cyan">&#x1F512;</div>
-      <h3>Onderbouwd advies</h3>
-      <p>Elk advies wordt onderbouwd met concrete beslisfactoren, betrouwbaarheidsindicator en vergelijkbare uitspraken.</p>
+      <p>Vind automatisch vergelijkbare uitspraken en zie hoe KIFID oordeelde in soortgelijke gevallen.</p>
     </div>
   </div>
 </section>
 
 <!-- How it works -->
-<section class="how-it-works">
+<section class="how-section">
   <div class="how-inner">
-    <div class="section-label">Hoe het werkt</div>
-    <h2 class="section-title">In 4 stappen naar een onderbouwd advies</h2>
-    <div class="steps">
-      <div class="step">
-        <div class="step-number">1</div>
-        <h4>Vul casuskenmerken in</h4>
+    <div style="text-align:center;">
+      <div class="section-eyebrow">Hoe het werkt</div>
+      <h2 class="section-title">In 4 stappen naar een onderbouwd advies</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h4>Casuskenmerken invullen</h4>
         <p>Type verzekering, kerngeschil, bewijspositie en overige relevante details.</p>
       </div>
-      <div class="step">
-        <div class="step-number">2</div>
-        <h4>Upload polisvoorwaarden</h4>
-        <p>Optioneel: laat AI de polisvoorwaarden scannen op risicovolle clausules.</p>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h4>Polisvoorwaarden uploaden</h4>
+        <p>Optioneel: laat AI de voorwaarden scannen op risicovolle clausules.</p>
       </div>
-      <div class="step">
-        <div class="step-number">3</div>
+      <div class="step-card">
+        <div class="step-num">3</div>
         <h4>AI analyseert</h4>
         <p>Het model vergelijkt uw casus met honderden historische KIFID-uitspraken.</p>
       </div>
-      <div class="step">
-        <div class="step-number">4</div>
-        <h4>Ontvang advies</h4>
-        <p>Uitkeren of procedure afwachten, met beslisfactoren en betrouwbaarheidsscore.</p>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <h4>Advies ontvangen</h4>
+        <p>Uitkeren of afwachten, met beslisfactoren en betrouwbaarheidsscore.</p>
       </div>
     </div>
   </div>
@@ -139,31 +157,25 @@
 <!-- Tool Section -->
 <section class="tool-section" id="tool-section">
   <div class="tool-header">
-    <div class="section-label">Predictor</div>
+    <div class="section-eyebrow">Predictor</div>
     <h2 class="section-title">KIFID Uitspraak Predictor</h2>
-    <p class="section-sub">
-      Voer de casuskenmerken in en ontvang direct een onderbouwde voorspelling.
-    </p>
+    <p class="section-desc">Voer de casuskenmerken in en ontvang direct een onderbouwde voorspelling.</p>
   </div>
 
-  <!-- Tab Bar -->
   <nav class="tab-bar" role="tablist">
     <button class="tab-btn active" role="tab" onclick="switchTab('predict')">Predictie</button>
-    <button class="tab-btn" role="tab" onclick="switchTab('data')">Data &amp; Upload</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('data')">Data</button>
     <button class="tab-btn" role="tab" onclick="switchTab('insights')">Inzichten</button>
   </nav>
 
   <!-- TAB: Predict -->
   <div id="tab-predict" class="main-grid" role="tabpanel">
-
-    <!-- Input Panel -->
     <div class="panel">
-      <div class="panel-title">Casuskenmerken invoeren</div>
-
+      <div class="panel-title">Casuskenmerken</div>
       <div class="field">
         <label>Type verzekering</label>
         <select id="insuranceType">
-          <option value="">&mdash; Selecteer &mdash;</option>
+          <option value="">Selecteer type</option>
           <option value="autoverzekering">Autoverzekering</option>
           <option value="woonhuisverzekering">Woonhuisverzekering</option>
           <option value="inboedelverzekering">Inboedelverzekering</option>
@@ -178,11 +190,10 @@
           <option value="overig">Overig</option>
         </select>
       </div>
-
       <div class="field">
         <label>Kerngeschil</label>
         <select id="coreDispute">
-          <option value="">&mdash; Selecteer &mdash;</option>
+          <option value="">Selecteer geschiltype</option>
           <option value="dekkingsweigering">Dekkingsweigering</option>
           <option value="uitleg_voorwaarden">Uitleg polisvoorwaarden</option>
           <option value="schadevaststelling">Schadevaststelling / schadehoogte</option>
@@ -196,11 +207,10 @@
           <option value="overig">Overig</option>
         </select>
       </div>
-
       <div class="field-row">
         <div class="field">
-          <label>Gevorderd bedrag (&euro;)</label>
-          <input type="number" id="claimAmount" placeholder="bijv. 15000">
+          <label>Gevorderd bedrag</label>
+          <input type="number" id="claimAmount" placeholder="&euro; 15.000">
         </div>
         <div class="field">
           <label>Bindend advies?</label>
@@ -210,64 +220,59 @@
           </select>
         </div>
       </div>
-
       <div class="field">
         <label>Bewijs consument</label>
         <select id="consumerEvidence">
-          <option value="">&mdash; Selecteer &mdash;</option>
+          <option value="">Selecteer bewijskracht</option>
           <option value="sterk">Sterk (foto's, rapporten, getuigen)</option>
           <option value="gemiddeld">Gemiddeld (eigen verklaring + enig bewijs)</option>
           <option value="zwak">Zwak (alleen eigen verklaring)</option>
         </select>
       </div>
-
       <div class="field">
         <label>Deskundigenrapport</label>
         <select id="expertReport">
           <option value="geen">Geen rapport</option>
-          <option value="consument">Ja, ingebracht door consument</option>
-          <option value="verzekeraar">Ja, ingebracht door verzekeraar</option>
+          <option value="consument">Ingebracht door consument</option>
+          <option value="verzekeraar">Ingebracht door verzekeraar</option>
           <option value="beide">Beide partijen</option>
         </select>
       </div>
-
       <div class="field">
-        <label>Coulanceaanbod verzekeraar</label>
+        <label>Coulanceaanbod</label>
         <select id="goodwillOffer">
-          <option value="nee">Nee</option>
+          <option value="nee">Geen coulance aangeboden</option>
           <option value="ja_laag">Ja, laag bedrag</option>
           <option value="ja_redelijk">Ja, redelijk bedrag</option>
         </select>
       </div>
-
       <div class="field">
-        <label>Aanvullende context (optioneel)</label>
-        <textarea id="additionalContext" placeholder="Beschrijf relevante details: bijv. consument beroept zich op redelijkheid en billijkheid, verzekeraar beroept zich op uitsluiting in art. 5.3 voorwaarden..."></textarea>
+        <label>Aanvullende context</label>
+        <textarea id="additionalContext" placeholder="Optioneel: relevante details over de casus..."></textarea>
       </div>
 
-      <div class="field" style="border-top:1px solid var(--border-subtle);padding-top:20px;margin-top:8px;">
-        <label>Polisvoorwaarden uploaden (optioneel)</label>
-        <div id="policyUploadZone" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s ease;" onclick="document.getElementById('policyFileInput').click()">
+      <div class="field" style="border-top:1px solid var(--border-subtle);padding-top:22px;margin-top:10px;">
+        <label>Polisvoorwaarden uploaden</label>
+        <div id="policyUploadZone" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:22px;text-align:center;cursor:pointer;transition:all 0.2s ease;" onclick="document.getElementById('policyFileInput').click()">
           <p style="font-size:14px;color:var(--text-muted);margin:0;" id="policyUploadLabel">
-            <strong>Klik om polisvoorwaarden PDF te uploaden</strong><br>
-            <span style="font-size:12px;color:var(--text-dim);">AI analyseert de voorwaarden op risicovolle clausules</span>
+            <strong style="color:var(--text-secondary);">Klik om PDF te uploaden</strong><br>
+            <span style="font-size:12px;color:var(--text-dim);margin-top:4px;display:inline-block;">AI scant op risicovolle clausules</span>
           </p>
         </div>
         <input type="file" id="policyFileInput" accept=".pdf" style="display:none" onchange="handlePolicyUpload(event)">
         <div id="policyAnalysisResult" style="margin-top:14px;"></div>
       </div>
 
-      <button class="btn-predict" id="btnPredict" onclick="runPrediction()">
-        Analyseer &amp; Voorspel
-      </button>
+      <button class="btn-predict" id="btnPredict" onclick="runPrediction()">Analyseer &amp; Voorspel</button>
     </div>
 
-    <!-- Results -->
     <div class="results-area" id="resultsArea">
       <div class="result-hero empty">
         <div class="empty-state">
-          <div class="icon-big" style="font-size:40px;margin-bottom:16px;opacity:0.15;">&#9878;&#65039;</div>
-          <p style="font-size:15px;">Vul de casuskenmerken in en klik op <strong>Analyseer &amp; Voorspel</strong><br>voor een onderbouwde inschatting.</p>
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <p style="font-size:15px;color:var(--text-dim);">Vul de casuskenmerken in en klik op <strong style="color:var(--text-muted);">Analyseer &amp; Voorspel</strong></p>
         </div>
       </div>
     </div>
@@ -277,97 +282,86 @@
   <div id="tab-data" role="tabpanel" style="display:none;">
     <div class="panel" style="max-width:800px;margin:0 auto 24px;">
       <div class="panel-title">KIFID Uitsprakenregister</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:20px;">
-        <div style="background:var(--bg-card);padding:18px 22px;text-align:center;">
-          <div style="font-family:'Source Code Pro',monospace;font-size:22px;font-weight:700;color:var(--text);">14.000+</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:3px;">Openbare uitspraken</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px;">
+        <div style="background:var(--bg-card);padding:20px 24px;text-align:center;">
+          <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;" data-count="14387" data-suffix="+">0</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:4px;font-weight:500;">Openbare uitspraken</div>
         </div>
-        <div style="background:var(--bg-card);padding:18px 22px;text-align:center;">
-          <div style="font-family:'Source Code Pro',monospace;font-size:22px;font-weight:700;color:var(--text);">2007 &ndash; nu</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:3px;">Periode beschikbaar</div>
+        <div style="background:var(--bg-card);padding:20px 24px;text-align:center;">
+          <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">2007 &ndash; nu</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:4px;font-weight:500;">Periode</div>
         </div>
-        <div style="background:var(--bg-card);padding:18px 22px;text-align:center;">
-          <div style="font-family:'Source Code Pro',monospace;font-size:22px;font-weight:700;color:var(--text);">Publiek</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:3px;">Vrij toegankelijk</div>
+        <div style="background:var(--bg-card);padding:20px 24px;text-align:center;">
+          <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">Publiek</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:4px;font-weight:500;">Vrij toegankelijk</div>
         </div>
       </div>
-      <p style="font-size:14px;color:var(--text-muted);line-height:1.7;margin-bottom:18px;">
-        Alle KIFID-uitspraken worden openbaar gepubliceerd op
-        <a href="https://www.kifid.nl/uitspraken/" target="_blank" style="color:var(--primary);font-weight:600;text-decoration:none;">kifid.nl/uitspraken</a>.
-      </p>
-
       <div style="display:flex;gap:12px;margin-bottom:14px;">
         <input type="text" id="kifidLookup" placeholder="Zoek op uitspraaknummer, bijv. 2024-1029" style="flex:1;">
-        <button class="btn-predict" onclick="lookupKifid()" style="width:auto;margin-top:0;padding:11px 22px;">Opzoeken</button>
+        <button class="btn-predict" onclick="lookupKifid()" style="width:auto;margin-top:0;padding:11px 24px;">Opzoeken</button>
       </div>
       <div id="kifidLookupResult"></div>
     </div>
-
     <div class="panel" style="max-width:800px;margin:0 auto;">
-      <div class="panel-title">Uitsprakendata uploaden</div>
-      <div id="dataStatus" class="data-status empty">Nog geen data geladen. Upload KIFID-uitspraken of laad de dataset.</div>
-
+      <div class="panel-title">Dataset beheren</div>
+      <div id="dataStatus" class="data-status empty">Nog geen data geladen.</div>
       <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-        <p style="font-size:18px;opacity:0.2;margin-bottom:10px;">&#128196;</p>
-        <p><strong>Klik om bestanden te uploaden</strong> of sleep ze hierheen</p>
-        <p class="formats">CSV, JSON, of PDF-bestanden van KIFID-uitspraken</p>
+        <svg style="width:32px;height:32px;color:var(--text-dim);opacity:0.3;margin-bottom:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p><strong>Klik om bestanden te uploaden</strong></p>
+        <p class="formats">CSV of JSON bestanden van KIFID-uitspraken</p>
       </div>
-      <input type="file" id="fileInput" multiple accept=".csv,.json,.pdf" style="display:none" onchange="handleFileUpload(event)">
-
+      <input type="file" id="fileInput" multiple accept=".csv,.json" style="display:none" onchange="handleFileUpload(event)">
       <div id="uploadedFiles" style="margin-top:20px;"></div>
-
       <div style="display:flex;gap:14px;margin-top:28px;padding-top:22px;border-top:1px solid var(--border-subtle);">
         <button class="btn-predict" onclick="loadFullDataset()" style="flex:1;">Volledige dataset laden</button>
-        <button class="btn-predict" onclick="loadDemoData()" style="flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);">Demo-data laden</button>
+        <button class="btn-predict" onclick="loadDemoData()" style="flex:1;background:var(--bg-alt);color:var(--text);border:1px solid var(--border);">Demo-data</button>
       </div>
     </div>
   </div>
 
   <!-- TAB: Insights -->
   <div id="tab-insights" role="tabpanel" style="display:none;">
-    <div class="analysis-grid" id="insightsGrid">
+    <div class="analysis-grid">
       <div class="analysis-card" style="grid-column:span 2;">
         <h3>Uitkomstverdeling per verzekeringstype</h3>
         <div id="insightChart" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
-          <p style="color:var(--text-dim);font-size:14px;">Laad eerst uitsprakendata via het Data-tabblad.</p>
+          <p style="color:var(--text-dim);font-size:14px;">Laad eerst data via het Data-tabblad.</p>
         </div>
       </div>
       <div class="analysis-card">
         <h3>Sterkste voorspellers</h3>
         <div id="insightPredictors">
-          <p style="color:var(--text-dim);font-size:14px;">Beschikbaar na data-upload.</p>
+          <p style="color:var(--text-dim);font-size:14px;">Beschikbaar na laden data.</p>
         </div>
       </div>
       <div class="analysis-card">
-        <h3>Risicofactoren voor verzekeraar</h3>
+        <h3>Risicofactoren</h3>
         <div id="insightRisks">
-          <p style="color:var(--text-dim);font-size:14px;">Beschikbaar na data-upload.</p>
+          <p style="color:var(--text-dim);font-size:14px;">Beschikbaar na laden data.</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Trust Bar -->
-<section class="trust-bar">
+<!-- Trust -->
+<section class="trust-section">
   <div class="trust-inner">
-    <div class="trust-items">
-      <div class="trust-item">
-        <span class="trust-icon">&#x1F512;</span>
-        <span>Geen data opgeslagen</span>
-      </div>
-      <div class="trust-item">
-        <span class="trust-icon">&#x2696;&#xFE0F;</span>
-        <span>Indicatief model, geen juridisch advies</span>
-      </div>
-      <div class="trust-item">
-        <span class="trust-icon">&#x1F4CA;</span>
-        <span>Gebaseerd op openbare KIFID-data</span>
-      </div>
-      <div class="trust-item">
-        <span class="trust-icon">&#x1F916;</span>
-        <span>Powered by Claude AI</span>
-      </div>
+    <div class="trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span>Geen data opgeslagen</span>
+    </div>
+    <div class="trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span>Indicatief model, geen juridisch advies</span>
+    </div>
+    <div class="trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Openbare KIFID-data</span>
+    </div>
+    <div class="trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span>Powered by Claude AI</span>
     </div>
   </div>
 </section>
@@ -376,8 +370,10 @@
 <footer class="footer">
   <div class="footer-inner">
     <div class="footer-brand">
-      <div class="footer-logo">KP</div>
-      <span class="footer-text">KIFID Predictor &mdash; AI-gestuurde uitspraakanalyse</span>
+      <div class="footer-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <span class="footer-text">KIFID Predictor</span>
     </div>
     <div class="footer-links">
       <a href="https://www.kifid.nl/uitspraken/" target="_blank" rel="noopener noreferrer">KIFID Uitspraken</a>
