@@ -132,7 +132,7 @@ function updateHeroStats() {
   var consumerWin = Math.round((toegewezen + deels) / total * 100);
   var insurerWin = Math.round(afgewezen / total * 100);
 
-  // Update metric elements that already have data-count
+  // Update hero metric elements
   var metrics = document.querySelectorAll('.metric-value');
   metrics.forEach(function(m) {
     if (m.id === 'heroStatConsumer') {
@@ -148,6 +148,29 @@ function updateHeroStats() {
   if (firstMetric && !firstMetric.id) {
     firstMetric.dataset.count = total;
     firstMetric.textContent = total + '+';
+  }
+
+  // Update stats strip counters
+  var statConsumer = document.getElementById('statConsumer');
+  if (statConsumer) {
+    var span = statConsumer.querySelector('span');
+    if (span) { span.dataset.countTo = consumerWin; span.textContent = consumerWin + '%'; }
+  }
+  var statInsurer = document.getElementById('statInsurer');
+  if (statInsurer) {
+    var span2 = statInsurer.querySelector('span');
+    if (span2) { span2.dataset.countTo = insurerWin; span2.textContent = insurerWin + '%'; }
+  }
+
+  // Update average amount from dataset
+  var amounts = uitspraken.filter(function(u) { return u.bedrag_gevorderd > 0; }).map(function(u) { return u.bedrag_gevorderd; });
+  if (amounts.length > 0) {
+    var avgAmount = Math.round(amounts.reduce(function(a, b) { return a + b; }, 0) / amounts.length);
+    var statAvg = document.getElementById('statAvgAmount');
+    if (statAvg) {
+      var span3 = statAvg.querySelector('span');
+      if (span3) { span3.dataset.countTo = avgAmount; span3.textContent = '\u20AC' + avgAmount.toLocaleString('nl-NL'); }
+    }
   }
 }
 
@@ -268,6 +291,7 @@ function analyzeCase(input) {
   var score = 50;
   var factors = [];
 
+  // ── 1. Base rate from insurance type ──
   var typeMatches = uitspraken.filter(function(u) { return u.type_verzekering === input.type; });
   if (typeMatches.length > 0) {
     var afw = typeMatches.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length;
@@ -276,23 +300,46 @@ function analyzeCase(input) {
     factors.push({ label: 'Afwijzingspercentage ' + input.type + ' (n=' + typeMatches.length + ')', value: baseRate + '%', type: baseRate > 60 ? 'pro' : 'con' });
   }
 
-  var disputeMatches = uitspraken.filter(function(u) { return u.kerngeschil === input.dispute; });
-  if (disputeMatches.length > 0) {
-    var afw2 = disputeMatches.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length;
-    var rate = Math.round(afw2 / disputeMatches.length * 100);
-    var adj = Math.round((rate - 50) * 0.3);
-    score += adj;
-    factors.push({ label: 'Kerngeschil ' + input.dispute + ' (' + rate + '% afw.)', value: (adj >= 0 ? '+' : '') + adj, type: adj > 0 ? 'pro' : 'con' });
+  // ── 2. Cross-tabulated: type + dispute combination ──
+  var comboMatches = uitspraken.filter(function(u) { return u.type_verzekering === input.type && u.kerngeschil === input.dispute; });
+  if (comboMatches.length >= 2) {
+    var comboAfw = comboMatches.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length;
+    var comboRate = Math.round(comboAfw / comboMatches.length * 100);
+    var comboAdj = Math.round((comboRate - score) * 0.4);
+    score += comboAdj;
+    factors.push({ label: input.type + ' + ' + input.dispute + ' (n=' + comboMatches.length + ')', value: (comboAdj >= 0 ? '+' : '') + comboAdj, type: comboAdj > 0 ? 'pro' : comboAdj < 0 ? 'con' : 'neutral' });
+  } else {
+    // Fall back to dispute-only rate
+    var disputeMatches = uitspraken.filter(function(u) { return u.kerngeschil === input.dispute; });
+    if (disputeMatches.length > 0) {
+      var afw2 = disputeMatches.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length;
+      var rate = Math.round(afw2 / disputeMatches.length * 100);
+      var adj = Math.round((rate - 50) * 0.3);
+      score += adj;
+      factors.push({ label: 'Kerngeschil ' + input.dispute + ' (' + rate + '% afw.)', value: (adj >= 0 ? '+' : '') + adj, type: adj > 0 ? 'pro' : 'con' });
+    }
   }
 
-  if (input.evidence === 'sterk') {
-    score -= 15;
-    factors.push({ label: 'Sterk consumentenbewijs', value: '-15', type: 'con' });
-  } else if (input.evidence === 'zwak') {
-    score += 15;
-    factors.push({ label: 'Zwak consumentenbewijs', value: '+15', type: 'pro' });
+  // ── 3. Evidence-based scoring from dataset ──
+  var evidenceMatches = uitspraken.filter(function(u) { return u.beslisfactoren && u.beslisfactoren.bewijs_consument === input.evidence; });
+  if (evidenceMatches.length >= 3) {
+    var evAfw = evidenceMatches.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length;
+    var evRate = Math.round(evAfw / evidenceMatches.length * 100);
+    var evAdj = Math.round((evRate - 50) * 0.3);
+    score += evAdj;
+    factors.push({ label: 'Bewijskracht \'' + input.evidence + '\' (n=' + evidenceMatches.length + ')', value: (evAdj >= 0 ? '+' : '') + evAdj, type: evAdj > 0 ? 'pro' : evAdj < 0 ? 'con' : 'neutral' });
+  } else {
+    // Fallback to fixed adjustments
+    if (input.evidence === 'sterk') {
+      score -= 15;
+      factors.push({ label: 'Sterk consumentenbewijs', value: '-15', type: 'con' });
+    } else if (input.evidence === 'zwak') {
+      score += 15;
+      factors.push({ label: 'Zwak consumentenbewijs', value: '+15', type: 'pro' });
+    }
   }
 
+  // ── 4. Expert report scoring ──
   if (input.expert === 'verzekeraar') {
     score += 10;
     factors.push({ label: 'Deskundigenrapport verzekeraar', value: '+10', type: 'pro' });
@@ -304,6 +351,7 @@ function analyzeCase(input) {
     factors.push({ label: 'Beide partijen rapport', value: '-3', type: 'neutral' });
   }
 
+  // ── 5. Goodwill/coulance ──
   if (input.goodwill === 'ja_redelijk') {
     score += 8;
     factors.push({ label: 'Redelijk coulanceaanbod', value: '+8', type: 'pro' });
@@ -312,18 +360,43 @@ function analyzeCase(input) {
     factors.push({ label: 'Laag coulanceaanbod', value: '+3', type: 'neutral' });
   }
 
-  if (input.amount > 50000) {
-    score -= 3;
-    factors.push({ label: 'Hoog bedrag (>50k)', value: '-3', type: 'neutral' });
-  } else if (input.amount > 0 && input.amount < 2000) {
-    score += 3;
-    factors.push({ label: 'Laag bedrag (<2k)', value: '+3', type: 'neutral' });
+  // ── 6. Amount-based scoring from dataset distribution ──
+  if (input.amount > 0 && typeMatches.length >= 3) {
+    var amounts = typeMatches.filter(function(u) { return u.bedrag_gevorderd > 0; });
+    if (amounts.length >= 3) {
+      var sortedAmounts = amounts.map(function(u) { return u.bedrag_gevorderd; }).sort(function(a, b) { return a - b; });
+      var median = sortedAmounts[Math.floor(sortedAmounts.length / 2)];
+      var highAmounts = amounts.filter(function(u) { return u.bedrag_gevorderd > median; });
+      var highAfw = highAmounts.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length;
+      var lowAmounts = amounts.filter(function(u) { return u.bedrag_gevorderd <= median; });
+      var lowAfw = lowAmounts.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length;
+      if (input.amount > median && highAmounts.length > 0) {
+        var highRate = Math.round(highAfw / highAmounts.length * 100);
+        var amtAdj = Math.round((highRate - 50) * 0.15);
+        score += amtAdj;
+        factors.push({ label: 'Bedrag boven mediaan (\u20AC' + Math.round(median).toLocaleString('nl-NL') + ')', value: (amtAdj >= 0 ? '+' : '') + amtAdj, type: amtAdj > 0 ? 'pro' : amtAdj < 0 ? 'con' : 'neutral' });
+      } else if (lowAmounts.length > 0) {
+        var lowRate = Math.round(lowAfw / lowAmounts.length * 100);
+        var amtAdj2 = Math.round((lowRate - 50) * 0.15);
+        score += amtAdj2;
+        factors.push({ label: 'Bedrag onder mediaan (\u20AC' + Math.round(median).toLocaleString('nl-NL') + ')', value: (amtAdj2 >= 0 ? '+' : '') + amtAdj2, type: amtAdj2 > 0 ? 'pro' : amtAdj2 < 0 ? 'con' : 'neutral' });
+      }
+    }
+  } else {
+    if (input.amount > 50000) {
+      score -= 3;
+      factors.push({ label: 'Hoog bedrag (>50k)', value: '-3', type: 'neutral' });
+    } else if (input.amount > 0 && input.amount < 2000) {
+      score += 3;
+      factors.push({ label: 'Laag bedrag (<2k)', value: '+3', type: 'neutral' });
+    }
   }
 
   if (input.binding === 'bindend') {
     factors.push({ label: 'Bindend advies', value: 'info', type: 'neutral' });
   }
 
+  // ── 7. Policy analysis ──
   if (policyAnalysis) {
     var rs = policyAnalysis.risicoscore || 0;
     if (rs >= 7) {
@@ -346,27 +419,51 @@ function analyzeCase(input) {
     }
   }
 
+  // ── 8. Woonhuis-specific factors ──
+  if (input.type === 'woonhuisverzekering') {
+    // Data shows woonhuis has 44% afwijzing (4/9), higher success for uitleg_voorwaarden
+    if (input.dispute === 'uitleg_voorwaarden') {
+      score -= 8;
+      factors.push({ label: 'Woonhuis + uitleg voorwaarden: hoge toewijzing', value: '-8', type: 'con' });
+    }
+    if (input.dispute === 'eigen_gebrek' || input.dispute === 'clausule') {
+      score += 8;
+      factors.push({ label: 'Woonhuis + ' + input.dispute + ': hoge afwijzing', value: '+8', type: 'pro' });
+    }
+    // Woonhuis dekkingsweigering is split - depends on evidence
+    if (input.dispute === 'dekkingsweigering' && input.evidence === 'sterk') {
+      score -= 5;
+      factors.push({ label: 'Woonhuis dekking + sterk bewijs: gunstiger', value: '-5', type: 'con' });
+    }
+  }
+
   score = Math.max(5, Math.min(95, score));
 
+  // ── 9. Confidence calculation ──
   var relevantMatches = uitspraken.filter(function(u) { return u.type_verzekering === input.type || u.kerngeschil === input.dispute; }).length;
+  var exactMatches = comboMatches.length;
   var confidence = 'laag';
   var confidencePct = 25;
-  if (relevantMatches >= 20) { confidence = 'hoog'; confidencePct = 85; }
+  if (exactMatches >= 5) { confidence = 'hoog'; confidencePct = 85; }
+  else if (relevantMatches >= 20) { confidence = 'hoog'; confidencePct = 80; }
+  else if (exactMatches >= 3) { confidence = 'gemiddeld'; confidencePct = 65; }
   else if (relevantMatches >= 10) { confidence = 'gemiddeld'; confidencePct = 60; }
   else if (relevantMatches >= 5) { confidence = 'beperkt'; confidencePct = 40; }
   if (policyAnalysis) confidencePct = Math.min(95, confidencePct + 10);
 
+  // ── 10. Similar cases with improved relevance scoring ──
   var similar = uitspraken
     .filter(function(u) { return u.type_verzekering === input.type || u.kerngeschil === input.dispute; })
     .map(function(u) {
       var rel = 0;
-      if (u.type_verzekering === input.type) rel += 40;
-      if (u.kerngeschil === input.dispute) rel += 40;
+      if (u.type_verzekering === input.type) rel += 30;
+      if (u.kerngeschil === input.dispute) rel += 30;
+      if (u.type_verzekering === input.type && u.kerngeschil === input.dispute) rel += 20;
       if (u.beslisfactoren) {
         if (u.beslisfactoren.bewijs_consument === input.evidence) rel += 10;
         if (u.beslisfactoren.deskundigenrapport === input.expert) rel += 10;
       }
-      return { nr: u.uitspraaknr, desc: u.samenvatting || '', outcome: u.uitkomst, relevance: rel + '%', pdfUrl: u.pdf_url || '' };
+      return { nr: u.uitspraaknr, desc: u.samenvatting || '', outcome: u.uitkomst, relevance: rel + '%', pdfUrl: u.pdf_url || u.bron_url || '' };
     })
     .sort(function(a, b) { return parseInt(b.relevance) - parseInt(a.relevance); })
     .slice(0, 6);
