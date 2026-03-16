@@ -366,7 +366,7 @@ function analyzeCase(input) {
         if (u.beslisfactoren.bewijs_consument === input.evidence) rel += 10;
         if (u.beslisfactoren.deskundigenrapport === input.expert) rel += 10;
       }
-      return { nr: u.uitspraaknr, desc: u.samenvatting || '', outcome: u.uitkomst, relevance: rel + '%', pdfUrl: u.pdf_url || '' };
+      return { nr: u.uitspraaknr, desc: u.samenvatting || '', outcome: u.uitkomst, relevance: rel + '%', pdfUrl: u.bron_url || '' };
     })
     .sort(function(a, b) { return parseInt(b.relevance) - parseInt(a.relevance); })
     .slice(0, 6);
