@@ -2,53 +2,46 @@
 """
 KIFID Uitspraken Scraper
 ========================
-Downloads KIFID decisions (PDFs) from kifid.nl.
+Downloads KIFID decisions (PDFs) from kifid.nl using the KIFID Search API.
 
-Strategies (tried in order):
-1. Sitemap XML parsing - find PDF links in sitemaps
-2. Uitspraken search page scraping - parse paginated results
-3. Individual uitspraak page scraping - find PDF download links
-4. Known URL patterns - try known PDF URL patterns as fallback
+The KIFID website is a React SPA backed by an IIS/ASP.NET API at:
+    https://www.kifid.nl/api/Search/SearchDecision/
+
+This scraper paginates through the API, collects PDF URLs (statementLink),
+and downloads the PDFs to data/pdfs/.
 
 Usage:
     python3 scripts/kifid_scraper.py              # Run full scraper
     python3 scripts/kifid_scraper.py --discover    # Only discover URLs, don't download
     python3 scripts/kifid_scraper.py --download    # Only download from urls.json
     python3 scripts/kifid_scraper.py --limit 50    # Limit number of downloads
+    python3 scripts/kifid_scraper.py --category Verzekeringen  # Filter by category
 """
 
 import argparse
 import json
 import logging
-import os
 import re
 import sys
 import time
 from datetime import date
 from pathlib import Path
 from typing import Dict, List, Optional
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 import requests
-from bs4 import BeautifulSoup
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 
 BASE_URL = "https://www.kifid.nl"
-UITSPRAKEN_URL = f"{BASE_URL}/kifid-kennis-en-uitspraken/uitspraken"
-SITEMAP_URLS = [
-    f"{BASE_URL}/sitemap_index.xml",
-    f"{BASE_URL}/sitemap.xml",
-    f"{BASE_URL}/wp-sitemap.xml",
-    f"{BASE_URL}/wp-sitemap-posts-uitspraak-1.xml",
-    f"{BASE_URL}/wp-sitemap-posts-post-1.xml",
-]
+API_URL = f"{BASE_URL}/api/Search/SearchDecision/"
 
 USER_AGENT = "KIFID-Predictor-Research/1.0 (+https://github.com/kifid-predictor)"
 REQUEST_DELAY = 2.0  # seconds between requests
 REQUEST_TIMEOUT = 30  # seconds
+PAGE_SIZE = 100  # max items per API page
 
 # Paths (relative to project root)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -77,372 +70,123 @@ def create_session() -> requests.Session:
     session = requests.Session()
     session.headers.update({
         "User-Agent": USER_AGENT,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "nl,en;q=0.5",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
     })
     return session
 
 
-def fetch(session: requests.Session, url: str, **kwargs) -> Optional[requests.Response]:
-    """Fetch a URL with rate limiting and error handling."""
-    time.sleep(REQUEST_DELAY)
-    try:
-        resp = session.get(url, timeout=REQUEST_TIMEOUT, **kwargs)
-        resp.raise_for_status()
-        return resp
-    except requests.RequestException as e:
-        log.warning("Failed to fetch %s: %s", url, e)
-        return None
-
-
 # ---------------------------------------------------------------------------
-# URL Discovery Strategies
+# Helpers
 # ---------------------------------------------------------------------------
 
 
-def extract_uitspraak_nr(url_or_filename: str) -> Optional[str]:
-    """Extract uitspraaknummer from a URL or filename like 'uitspraak-2025-0448'."""
-    m = re.search(r"uitspraak-(\d{4}-\d{3,4})", url_or_filename)
+def extract_uitspraak_nr(url_or_name: str) -> Optional[str]:
+    """Extract uitspraaknummer like '2025-0448' from a URL or name."""
+    m = re.search(r"(\d{4}-\d{3,4})", url_or_name)
     return m.group(1) if m else None
 
 
-def is_kifid_pdf_url(url: str) -> bool:
-    """Check if URL looks like a KIFID uitspraak PDF."""
-    return bool(
-        re.search(r"kifid\.nl/media/[a-z0-9]+/uitspraak-\d{4}-\d{3,4}.*\.pdf", url)
-    )
+# ---------------------------------------------------------------------------
+# KIFID API Discovery
+# ---------------------------------------------------------------------------
 
 
-def discover_from_sitemaps(session: requests.Session) -> list[dict]:
-    """Strategy 1: Parse sitemaps for uitspraak pages/PDFs."""
-    log.info("Strategy 1: Checking sitemaps...")
-    found = []
+def discover_from_api(
+    session: requests.Session,
+    category: str = "",
+    max_items: int = 0,
+) -> List[dict]:
+    """Paginate through the KIFID Search API and collect uitspraak metadata."""
+    log.info("Discovering uitspraken via KIFID API...")
 
-    for sitemap_url in SITEMAP_URLS:
-        resp = fetch(session, sitemap_url)
-        if not resp:
-            continue
+    all_items = []  # type: List[dict]
+    page = 1
+    total_items = None
 
-        log.info("  Found sitemap: %s", sitemap_url)
-        soup = BeautifulSoup(resp.content, "lxml-xml")
+    while True:
+        params = {
+            "searchTerm": "",
+            "category": category,
+            "authority": "",
+            "targetGroup": "",
+            "startDate": 0,
+            "endDate": 0,
+            "page": page,
+            "pageSize": PAGE_SIZE,
+            "sort": "",
+        }
 
-        # Check for sitemap index (contains other sitemaps)
-        sub_sitemaps = [loc.text.strip() for loc in soup.find_all("loc")
-                        if "sitemap" in loc.text.lower() and loc.text.strip().endswith(".xml")]
+        log.info("  Fetching page %d ...", page)
+        time.sleep(REQUEST_DELAY)
 
-        # Check for direct URLs
-        urls = [loc.text.strip() for loc in soup.find_all("loc")
-                if "uitspraak" in loc.text.lower() or loc.text.strip().endswith(".pdf")]
-
-        for url in urls:
-            if url.endswith(".pdf") and is_kifid_pdf_url(url):
-                nr = extract_uitspraak_nr(url)
-                if nr:
-                    found.append({"uitspraaknr": nr, "pdf_url": url, "source": "sitemap"})
-            elif "uitspraak" in url.lower() and not url.endswith(".xml"):
-                # This is a page URL, we'll need to scrape it for the PDF link
-                found.append({"page_url": url, "source": "sitemap"})
-
-        # Recurse into sub-sitemaps
-        for sub_url in sub_sitemaps:
-            if sub_url in SITEMAP_URLS:
-                continue
-            log.info("  Checking sub-sitemap: %s", sub_url)
-            sub_resp = fetch(session, sub_url)
-            if not sub_resp:
-                continue
-            sub_soup = BeautifulSoup(sub_resp.content, "lxml-xml")
-            for loc in sub_soup.find_all("loc"):
-                url = loc.text.strip()
-                if url.endswith(".pdf") and is_kifid_pdf_url(url):
-                    nr = extract_uitspraak_nr(url)
-                    if nr:
-                        found.append({"uitspraaknr": nr, "pdf_url": url, "source": "sitemap"})
-                elif "uitspraak" in url.lower() and not url.endswith(".xml"):
-                    found.append({"page_url": url, "source": "sitemap"})
-
-    log.info("  Sitemap strategy found %d items", len(found))
-    return found
-
-
-def discover_from_search_pages(session: requests.Session, max_pages: int = 20) -> list[dict]:
-    """Strategy 2: Scrape the uitspraken search/listing pages."""
-    log.info("Strategy 2: Scraping uitspraken listing pages...")
-    found = []
-
-    # Try paginated listing
-    page_urls_to_try = [
-        UITSPRAKEN_URL,
-        f"{BASE_URL}/uitspraken/",
-        f"{BASE_URL}/category/uitspraak/",
-    ]
-
-    for base_url in page_urls_to_try:
-        resp = fetch(session, base_url)
-        if not resp:
-            continue
-
-        log.info("  Found listing at: %s", base_url)
-        found.extend(_extract_from_html(resp.text, resp.url))
-
-        # Try pagination
-        for page_num in range(2, max_pages + 1):
-            # Try multiple pagination patterns
-            page_variants = [
-                f"{base_url}?paged={page_num}",
-                f"{base_url}page/{page_num}/",
-                f"{base_url}?page={page_num}",
-            ]
-            page_found = False
-            for page_url in page_variants:
-                resp = fetch(session, page_url)
-                if resp and resp.status_code == 200:
-                    new_items = _extract_from_html(resp.text, resp.url)
-                    if not new_items:
-                        break
-                    found.extend(new_items)
-                    log.info("  Page %d: found %d items", page_num, len(new_items))
-                    page_found = True
-                    break
-            if not page_found:
-                break
-
-        if found:
-            break  # Found a working listing URL
-
-    log.info("  Search page strategy found %d items", len(found))
-    return found
-
-
-def _extract_from_html(html: str, base_url: str) -> list[dict]:
-    """Extract uitspraak links and PDF URLs from an HTML page."""
-    soup = BeautifulSoup(html, "html.parser")
-    items = []
-
-    # Look for direct PDF links
-    for a in soup.find_all("a", href=True):
-        href = urljoin(base_url, a["href"])
-        if href.endswith(".pdf") and is_kifid_pdf_url(href):
-            nr = extract_uitspraak_nr(href)
-            if nr:
-                title = a.get_text(strip=True) or None
-                items.append({"uitspraaknr": nr, "pdf_url": href, "title": title, "source": "html"})
-
-        # Look for links to individual uitspraak pages
-        elif re.search(r"uitspraak.*\d{4}-\d{3,4}", href):
-            nr = extract_uitspraak_nr(href)
-            if nr:
-                title = a.get_text(strip=True) or None
-                items.append({"uitspraaknr": nr, "page_url": href, "title": title, "source": "html"})
-
-    return items
-
-
-def discover_from_ajax(session: requests.Session, max_pages: int = 20) -> list[dict]:
-    """Strategy 3: Try AJAX/REST endpoints for dynamic content loading."""
-    log.info("Strategy 3: Trying AJAX/REST endpoints...")
-    found = []
-
-    # Try WP REST API with various custom post types
-    rest_endpoints = [
-        f"{BASE_URL}/wp-json/wp/v2/posts?per_page=100&search=uitspraak",
-        f"{BASE_URL}/wp-json/wp/v2/uitspraak?per_page=100",
-        f"{BASE_URL}/wp-json/wp/v2/uitspraken?per_page=100",
-        f"{BASE_URL}/wp-json/wp/v2/pages?per_page=100&search=uitspraak",
-        f"{BASE_URL}/wp-json/kifid/v1/uitspraken",
-        f"{BASE_URL}/wp-json/",
-    ]
-
-    for endpoint in rest_endpoints:
-        resp = fetch(session, endpoint)
-        if not resp:
-            continue
+        try:
+            resp = session.get(API_URL, params=params, timeout=REQUEST_TIMEOUT)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            log.error("  API request failed on page %d: %s", page, e)
+            break
 
         try:
             data = resp.json()
-        except (json.JSONDecodeError, ValueError):
-            continue
+        except (json.JSONDecodeError, ValueError) as e:
+            log.error("  Failed to parse API response on page %d: %s", page, e)
+            break
 
-        log.info("  REST endpoint responded: %s", endpoint)
+        decision = data.get("decision", {})
+        items = decision.get("decisionItemsList", [])
 
-        # If we got the API index, look for useful routes
-        if isinstance(data, dict) and "routes" in data:
-            log.info("  Found WP REST API index with routes:")
-            for route in data.get("routes", {}):
-                if "uitspraak" in route.lower() or "kifid" in route.lower():
-                    log.info("    → %s", route)
-            continue
+        if total_items is None:
+            total_items = data.get("totalItems", 0)
+            log.info("  Total items available: %s", total_items)
 
-        # Process list of posts
-        if isinstance(data, list):
-            for post in data:
-                content = post.get("content", {}).get("rendered", "")
-                title = post.get("title", {}).get("rendered", "")
-                link = post.get("link", "")
+        if not items:
+            log.info("  No more items on page %d, stopping.", page)
+            break
 
-                # Extract PDF URLs from post content
-                pdf_urls = re.findall(
-                    r'https?://[^"\'>\s]+kifid\.nl/media/[a-z0-9]+/uitspraak-\d{4}-\d{3,4}[^"\'>\s]*\.pdf',
-                    content,
-                )
-                for pdf_url in pdf_urls:
-                    nr = extract_uitspraak_nr(pdf_url)
-                    if nr:
-                        found.append({
-                            "uitspraaknr": nr, "pdf_url": pdf_url,
-                            "title": title, "source": "rest_api",
-                        })
+        for item in items:
+            pdf_url = item.get("statementLink", "")
+            name = item.get("name", "") or item.get("title", "")
+            nr = extract_uitspraak_nr(name) or extract_uitspraak_nr(pdf_url)
 
-                # If no direct PDF but has uitspraak link
-                if not pdf_urls and "uitspraak" in (link or ""):
-                    nr = extract_uitspraak_nr(link)
-                    if nr:
-                        found.append({
-                            "uitspraaknr": nr, "page_url": link,
-                            "title": title, "source": "rest_api",
-                        })
+            if not nr or not pdf_url:
+                log.debug("  Skipping item without nr/pdf: %s", name)
+                continue
 
-            # Paginate REST API
-            if len(data) >= 100:
-                for page in range(2, max_pages + 1):
-                    sep = "&" if "?" in endpoint else "?"
-                    paged_url = f"{endpoint}{sep}page={page}"
-                    resp = fetch(session, paged_url)
-                    if not resp:
-                        break
-                    try:
-                        page_data = resp.json()
-                    except (json.JSONDecodeError, ValueError):
-                        break
-                    if not page_data:
-                        break
-                    for post in page_data:
-                        content = post.get("content", {}).get("rendered", "")
-                        pdf_urls = re.findall(
-                            r'https?://[^"\'>\s]+kifid\.nl/media/[a-z0-9]+/uitspraak-\d{4}-\d{3,4}[^"\'>\s]*\.pdf',
-                            content,
-                        )
-                        for pdf_url in pdf_urls:
-                            nr = extract_uitspraak_nr(pdf_url)
-                            if nr:
-                                found.append({
-                                    "uitspraaknr": nr, "pdf_url": pdf_url,
-                                    "source": "rest_api",
-                                })
+            all_items.append({
+                "uitspraaknr": nr,
+                "pdf_url": pdf_url,
+                "title": name,
+                "category": item.get("category", ""),
+                "authority": item.get("authority", ""),
+                "defendant": item.get("defendant", ""),
+                "summary": item.get("summary", ""),
+                "page_url": item.get("url", ""),
+                "date_found": date.today().isoformat(),
+                "downloaded": False,
+            })
 
-    # Try WordPress admin-ajax.php
-    ajax_actions = [
-        "kifid_search", "load_uitspraken", "search_uitspraken",
-        "get_uitspraken", "kifid_get_results",
-    ]
-    for action in ajax_actions:
-        resp = fetch(
-            session,
-            f"{BASE_URL}/wp-admin/admin-ajax.php",
-            params={"action": action, "page": 1, "per_page": 50},
-        )
-        if resp and resp.status_code == 200 and len(resp.text) > 50:
-            log.info("  AJAX action '%s' responded", action)
-            # Try to extract PDF URLs from response
-            pdf_urls = re.findall(
-                r'https?://[^"\'>\s]+kifid\.nl/media/[a-z0-9]+/uitspraak-\d{4}-\d{3,4}[^"\'>\s]*\.pdf',
-                resp.text,
-            )
-            for pdf_url in pdf_urls:
-                nr = extract_uitspraak_nr(pdf_url)
-                if nr:
-                    found.append({"uitspraaknr": nr, "pdf_url": pdf_url, "source": "ajax"})
+        log.info("  Page %d: collected %d items (total so far: %d)",
+                 page, len(items), len(all_items))
 
-    log.info("  AJAX/REST strategy found %d items", len(found))
-    return found
+        # Stop if we've hit the user-requested limit
+        if max_items and len(all_items) >= max_items:
+            all_items = all_items[:max_items]
+            log.info("  Reached requested limit of %d items.", max_items)
+            break
 
+        # Stop if we've fetched all available items
+        if total_items and len(all_items) >= total_items:
+            break
 
-def resolve_page_urls(session: requests.Session, items: list[dict]) -> list[dict]:
-    """For items that only have a page_url, scrape the page to find the PDF URL."""
-    log.info("Resolving %d page URLs to PDF URLs...", sum(1 for i in items if "page_url" in i and "pdf_url" not in i))
+        # Stop if page returned fewer items than page size (last page)
+        if len(items) < PAGE_SIZE:
+            break
 
-    for item in items:
-        if "pdf_url" in item or "page_url" not in item:
-            continue
+        page += 1
 
-        resp = fetch(session, item["page_url"])
-        if not resp:
-            continue
-
-        soup = BeautifulSoup(resp.text, "html.parser")
-
-        # Look for PDF download links on the page
-        for a in soup.find_all("a", href=True):
-            href = urljoin(resp.url, a["href"])
-            if href.endswith(".pdf") and is_kifid_pdf_url(href):
-                item["pdf_url"] = href
-                nr = extract_uitspraak_nr(href)
-                if nr:
-                    item["uitspraaknr"] = nr
-                if not item.get("title"):
-                    title_tag = soup.find("h1")
-                    if title_tag:
-                        item["title"] = title_tag.get_text(strip=True)
-                log.info("  Resolved: %s → %s", item.get("uitspraaknr", "?"), href)
-                break
-
-        # Also check for embedded PDF viewers or iframes
-        if "pdf_url" not in item:
-            for tag in soup.find_all(["iframe", "embed", "object"]):
-                src = tag.get("src") or tag.get("data")
-                if src and ".pdf" in src:
-                    full_url = urljoin(resp.url, src)
-                    if is_kifid_pdf_url(full_url):
-                        item["pdf_url"] = full_url
-                        break
-
-    return items
-
-
-# ---------------------------------------------------------------------------
-# URL collection & deduplication
-# ---------------------------------------------------------------------------
-
-
-def collect_urls(session: requests.Session) -> list[dict]:
-    """Run all discovery strategies and merge results."""
-    all_items = []
-
-    # Run strategies
-    all_items.extend(discover_from_sitemaps(session))
-    all_items.extend(discover_from_search_pages(session))
-    all_items.extend(discover_from_ajax(session))
-
-    # Resolve page URLs to PDF URLs
-    all_items = resolve_page_urls(session, all_items)
-
-    # Deduplicate by uitspraaknr, preferring items with pdf_url
-    by_nr: dict[str, dict] = {}
-    for item in all_items:
-        nr = item.get("uitspraaknr")
-        if not nr:
-            continue
-        existing = by_nr.get(nr)
-        if not existing or ("pdf_url" in item and "pdf_url" not in existing):
-            by_nr[nr] = item
-
-    # Build final list
-    today = date.today().isoformat()
-    results = []
-    for nr in sorted(by_nr.keys()):
-        item = by_nr[nr]
-        if "pdf_url" not in item:
-            continue  # Skip items where we couldn't find the PDF
-        results.append({
-            "uitspraaknr": nr,
-            "pdf_url": item["pdf_url"],
-            "title": item.get("title", f"Uitspraak {nr}"),
-            "date_found": today,
-            "downloaded": False,
-        })
-
-    log.info("Total unique uitspraken with PDF URLs: %d", len(results))
-    return results
+    log.info("Discovery complete: %d uitspraken found.", len(all_items))
+    return all_items
 
 
 # ---------------------------------------------------------------------------
@@ -450,24 +194,27 @@ def collect_urls(session: requests.Session) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
-def load_urls() -> list[dict]:
+def load_urls() -> List[dict]:
     if URLS_FILE.exists():
         return json.loads(URLS_FILE.read_text(encoding="utf-8"))
     return []
 
 
-def save_urls(urls: list[dict]) -> None:
+def save_urls(urls: List[dict]) -> None:
+    URLS_FILE.parent.mkdir(parents=True, exist_ok=True)
     URLS_FILE.write_text(json.dumps(urls, indent=2, ensure_ascii=False), encoding="utf-8")
     log.info("Saved %d URLs to %s", len(urls), URLS_FILE)
 
 
-def merge_urls(existing: list[dict], new: list[dict]) -> list[dict]:
+def merge_urls(existing: List[dict], new: List[dict]) -> List[dict]:
     """Merge new URLs into existing, preserving download status."""
-    by_nr = {u["uitspraaknr"]: u for u in existing}
+    by_nr = {}  # type: Dict[str, dict]
+    for u in existing:
+        by_nr[u["uitspraaknr"]] = u
     for item in new:
         nr = item["uitspraaknr"]
         if nr in by_nr:
-            # Keep existing download status, update PDF URL if we have a new one
+            # Keep existing download status, update PDF URL if needed
             if not by_nr[nr].get("pdf_url") and item.get("pdf_url"):
                 by_nr[nr]["pdf_url"] = item["pdf_url"]
         else:
@@ -511,7 +258,7 @@ def download_pdfs(session: requests.Session, urls: List[dict], limit: Optional[i
 
         # Determine filename from URL (preserve original name)
         url_filename = urlparse(pdf_url).path.split("/")[-1]
-        local_filename = url_filename if url_filename.endswith(".pdf") else f"uitspraak-{nr}.pdf"
+        local_filename = url_filename if url_filename.endswith(".pdf") else "uitspraak-%s.pdf" % nr
         local_path = PDF_DIR / local_filename
 
         # Skip if already on disk
@@ -579,6 +326,8 @@ def main():
     parser.add_argument("--discover", action="store_true", help="Only discover URLs, don't download")
     parser.add_argument("--download", action="store_true", help="Only download from existing urls.json")
     parser.add_argument("--limit", type=int, default=None, help="Max number of PDFs to download")
+    parser.add_argument("--max-items", type=int, default=0, help="Max items to discover from API (0=all)")
+    parser.add_argument("--category", type=str, default="", help="Filter by category (e.g. 'Verzekeringen')")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
     args = parser.parse_args()
 
@@ -606,7 +355,7 @@ def main():
     log.info("KIFID Uitspraken Scraper — Discovery Phase")
     log.info("=" * 60)
 
-    new_urls = collect_urls(session)
+    new_urls = discover_from_api(session, category=args.category, max_items=args.max_items)
 
     # Merge with existing
     existing = load_urls()
