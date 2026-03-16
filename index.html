@@ -1176,6 +1176,18 @@
     <textarea id="additionalContext" placeholder="Beschrijf relevante details: bijv. consument beroept zich op redelijkheid en billijkheid, verzekeraar beroept zich op uitsluiting in art. 5.3 voorwaarden..."></textarea>
   </div>
 
+  <div class="field" style="border-top:1px solid var(--border-subtle);padding-top:18px;margin-top:6px;">
+    <label>Polisvoorwaarden uploaden (optioneel)</label>
+    <div id="policyUploadZone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:border-color 0.15s ease,background 0.15s ease;" onclick="document.getElementById('policyFileInput').click()">
+      <p style="font-size:13px;color:var(--text-muted);margin:0;" id="policyUploadLabel">
+        <strong>Klik om polisvoorwaarden PDF te uploaden</strong><br>
+        <span style="font-size:12px;color:var(--text-dim);">Claude analyseert de voorwaarden op risicovolle clausules</span>
+      </p>
+    </div>
+    <input type="file" id="policyFileInput" accept=".pdf" style="display:none" onchange="handlePolicyUpload(event)">
+    <div id="policyAnalysisResult" style="margin-top:12px;"></div>
+  </div>
+
   <button class="btn-predict" id="btnPredict" onclick="runPrediction()">
     Analyseer &amp; Voorspel
   </button>
@@ -1702,6 +1714,32 @@ function analyzeCase(input) {
     factors.push({ label: 'Bindend advies (uitspraak is definitief)', value: 'info', type: 'neutral' });
   }
 
+  // 8. Polisvoorwaarden-analyse (indien geüpload)
+  if (policyAnalysis) {
+    const riskScore = policyAnalysis.risicoscore || 0;
+    if (riskScore >= 7) {
+      // Hoge risicoscore = veel risicovolle clausules = verzekeraar verliest vaker
+      const adj = -Math.round((riskScore - 5) * 3);
+      score += adj;
+      factors.push({ label: `Polisvoorwaarden risicoscore ${riskScore}/10 (risicovolle clausules)`, value: String(adj), type: 'con' });
+    } else if (riskScore >= 4) {
+      const adj = -Math.round((riskScore - 5) * 2);
+      score += adj;
+      factors.push({ label: `Polisvoorwaarden risicoscore ${riskScore}/10`, value: (adj >= 0 ? '+' : '') + adj, type: 'neutral' });
+    } else if (riskScore > 0) {
+      const adj = Math.round((5 - riskScore) * 2);
+      score += adj;
+      factors.push({ label: `Polisvoorwaarden risicoscore ${riskScore}/10 (duidelijke voorwaarden)`, value: '+' + adj, type: 'pro' });
+    }
+
+    // Extra factor: onduidelijke polisvoorwaarden
+    const hoogClausules = (policyAnalysis.risicovolle_clausules || []).filter(c => c.ernst === 'hoog').length;
+    if (hoogClausules >= 3) {
+      score -= 5;
+      factors.push({ label: `${hoogClausules} hoog-risico clausules in polisvoorwaarden`, value: '-5', type: 'con' });
+    }
+  }
+
   score = Math.max(5, Math.min(95, score));
 
   // Betrouwbaarheid op basis van sample size
@@ -1711,6 +1749,9 @@ function analyzeCase(input) {
   if (relevantMatches >= 20) { confidence = 'hoog'; confidencePct = 85; }
   else if (relevantMatches >= 10) { confidence = 'gemiddeld'; confidencePct = 60; }
   else if (relevantMatches >= 5) { confidence = 'beperkt'; confidencePct = 40; }
+
+  // Polisvoorwaarden-analyse verhoogt betrouwbaarheid
+  if (policyAnalysis) { confidencePct = Math.min(95, confidencePct + 10); }
 
   // Vergelijkbare zaken zoeken en scoren op relevantie
   const similar = uitspraken
@@ -2006,6 +2047,96 @@ function updateHeroStats() {
   if (insEl) { insEl.dataset.countTo = insurerWin; countUp(insEl, insurerWin, 1000, '', '%', false); }
   const amtEl = document.querySelector('#statAvgAmount span');
   if (amtEl) { amtEl.dataset.countTo = avgAmount; countUp(amtEl, avgAmount, 1400, '\u20AC', '', true); }
+}
+
+// ── Policy Analysis ──
+let policyAnalysis = null;
+
+async function handlePolicyUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const zone = document.getElementById('policyUploadZone');
+  const resultEl = document.getElementById('policyAnalysisResult');
+  const label = document.getElementById('policyUploadLabel');
+
+  // Show loading
+  zone.style.borderColor = 'var(--accent)';
+  zone.style.background = 'var(--accent-subtle)';
+  label.innerHTML = '<strong>Analyseren...</strong><br><span style="font-size:12px;color:var(--text-dim);">Claude leest de polisvoorwaarden (dit kan 15-30 sec duren)</span>';
+  resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:10px 0;font-size:13px;color:var(--text-dim);"><div class="spinner" style="width:16px;height:16px;border-width:2px;"></div> Polisvoorwaarden worden geanalyseerd...</div>';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const resp = await fetch('/api/analyze-policy', { method: 'POST', body: formData });
+    const data = await resp.json();
+
+    if (data.error) {
+      resultEl.innerHTML = `<div style="padding:10px 14px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--radius);font-size:13px;color:var(--red);">${data.error}${data.details ? ': ' + data.details : ''}</div>`;
+      zone.style.borderColor = 'var(--border)';
+      zone.style.background = '';
+      label.innerHTML = '<strong>Klik om opnieuw te uploaden</strong>';
+      return;
+    }
+
+    policyAnalysis = data;
+
+    // Success state
+    zone.style.borderColor = 'var(--green-border)';
+    zone.style.background = 'var(--green-bg)';
+    label.innerHTML = `<strong style="color:var(--green);">${file.name}</strong><br><span style="font-size:12px;color:var(--green);">Analyse compleet — risicoscore: ${data.risicoscore}/10</span>`;
+
+    // Render analysis
+    const clausules = (data.risicovolle_clausules || []).slice(0, 4);
+    resultEl.innerHTML = `
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-top:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <strong style="font-size:13px;">${data.product_naam || data.type_verzekering || 'Polisvoorwaarden'}</strong>
+          <span style="font-family:'Source Code Pro',monospace;font-size:12px;padding:3px 10px;border-radius:4px;font-weight:500;${
+            data.risicoscore >= 7 ? 'background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);' :
+            data.risicoscore >= 4 ? 'background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);' :
+            'background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);'
+          }">Risico: ${data.risicoscore}/10</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:10px;">${data.samenvatting || ''}</p>
+        ${clausules.length > 0 ? `
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:6px;font-weight:500;">Risicovolle clausules</div>
+          <ul style="list-style:none;margin:0;padding:0;">
+            ${clausules.map(c => `
+              <li style="font-size:12px;color:var(--text-secondary);padding:6px 0;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;gap:8px;">
+                <span>${c.artikel ? '<code style="font-size:11px;">Art. ' + c.artikel + '</code> ' : ''}${c.clausule}</span>
+                <span style="font-size:11px;padding:1px 6px;border-radius:3px;white-space:nowrap;${
+                  c.ernst === 'hoog' ? 'background:var(--red-bg);color:var(--red);' :
+                  c.ernst === 'middel' ? 'background:var(--amber-bg);color:var(--amber);' :
+                  'background:var(--green-bg);color:var(--green);'
+                }">${c.ernst}</span>
+              </li>
+            `).join('')}
+          </ul>
+        ` : ''}
+        ${(data.aanbevelingen || []).length > 0 ? `
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-top:12px;margin-bottom:6px;font-weight:500;">Aanbevelingen</div>
+          <ul style="margin:0;padding-left:16px;">
+            ${data.aanbevelingen.slice(0, 3).map(a => `<li style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:2px;">${a}</li>`).join('')}
+          </ul>
+        ` : ''}
+      </div>`;
+
+    // Auto-fill insurance type if empty
+    const typeSelect = document.getElementById('insuranceType');
+    if (!typeSelect.value && data.type_verzekering) {
+      const option = [...typeSelect.options].find(o => o.value === data.type_verzekering);
+      if (option) typeSelect.value = option.value;
+    }
+
+  } catch (err) {
+    resultEl.innerHTML = `<div style="padding:10px 14px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--radius);font-size:13px;color:var(--red);">Verbinding met server mislukt. Start de server: python3 scripts/server.py</div>`;
+    zone.style.borderColor = 'var(--border)';
+    zone.style.background = '';
+    label.innerHTML = '<strong>Klik om opnieuw te uploaden</strong>';
+  }
 }
 
 // ── Keyboard Navigation for Tabs ──
