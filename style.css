@@ -81,6 +81,8 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+svg { flex-shrink: 0; }
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
@@ -416,12 +418,15 @@ body {
 .benefit-icon {
   width: 48px;
   height: 48px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 20px;
   color: var(--primary);
+  overflow: hidden;
 }
 
 .benefit-icon svg { width: 24px; height: 24px; }
