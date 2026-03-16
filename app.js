@@ -81,7 +81,7 @@ function animateCount(el) {
 }
 
 // ── Scroll ──
-function scrollTo(id) {
+function scrollToSection(id) {
   var el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
