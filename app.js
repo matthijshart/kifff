@@ -264,80 +264,206 @@ function runPrediction() {
   }, 1200);
 }
 
+// ── Helper: compute afwijzingspercentage for a subset ──
+function afwPct(subset) {
+  if (subset.length === 0) return 50;
+  return Math.round(subset.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length / subset.length * 100);
+}
+
+// ── Helper: format score delta for display ──
+function fmtDelta(val) { return (val >= 0 ? '+' : '') + val; }
+
 function analyzeCase(input) {
   var score = 50;
   var factors = [];
+  var bfAll = uitspraken.filter(function(u) { return u.beslisfactoren; });
+  var overallAfwRate = afwPct(uitspraken);
 
+  // ── 1. Base rate: verzekeringtype ──
   var typeMatches = uitspraken.filter(function(u) { return u.type_verzekering === input.type; });
   if (typeMatches.length > 0) {
-    var afw = typeMatches.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length;
-    var baseRate = Math.round(afw / typeMatches.length * 100);
-    score = baseRate;
-    factors.push({ label: 'Afwijzingspercentage ' + input.type + ' (n=' + typeMatches.length + ')', value: baseRate + '%', type: baseRate > 60 ? 'pro' : 'con' });
+    var typeRate = afwPct(typeMatches);
+    score = typeRate;
+    factors.push({ label: 'Afwijzingspercentage ' + input.type + ' (n=' + typeMatches.length + ')', value: typeRate + '%', type: typeRate > 60 ? 'pro' : 'con' });
   }
 
+  // ── 2. Kerngeschil correctie ──
   var disputeMatches = uitspraken.filter(function(u) { return u.kerngeschil === input.dispute; });
   if (disputeMatches.length > 0) {
-    var afw2 = disputeMatches.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length;
-    var rate = Math.round(afw2 / disputeMatches.length * 100);
-    var adj = Math.round((rate - 50) * 0.3);
+    var dRate = afwPct(disputeMatches);
+    var adj = Math.round((dRate - 50) * 0.3);
     score += adj;
-    factors.push({ label: 'Kerngeschil ' + input.dispute + ' (' + rate + '% afw.)', value: (adj >= 0 ? '+' : '') + adj, type: adj > 0 ? 'pro' : 'con' });
+    factors.push({ label: 'Kerngeschil ' + input.dispute + ' (' + dRate + '% afw, n=' + disputeMatches.length + ')', value: fmtDelta(adj), type: adj > 0 ? 'pro' : adj < 0 ? 'con' : 'neutral' });
   }
 
-  if (input.evidence === 'sterk') {
-    score -= 15;
-    factors.push({ label: 'Sterk consumentenbewijs', value: '-15', type: 'con' });
-  } else if (input.evidence === 'zwak') {
-    score += 15;
-    factors.push({ label: 'Zwak consumentenbewijs', value: '+15', type: 'pro' });
+  // ── 3. Combinatie type + geschil (meest specifiek) ──
+  var combiMatches = uitspraken.filter(function(u) { return u.type_verzekering === input.type && u.kerngeschil === input.dispute; });
+  if (combiMatches.length >= 3) {
+    var combiRate = afwPct(combiMatches);
+    var combiAdj = Math.round((combiRate - score) * 0.4);
+    score += combiAdj;
+    factors.push({ label: 'Specifiek ' + input.type + ' + ' + input.dispute + ' (n=' + combiMatches.length + ')', value: fmtDelta(combiAdj), type: combiAdj > 0 ? 'pro' : combiAdj < 0 ? 'con' : 'neutral' });
   }
 
-  if (input.expert === 'verzekeraar') {
-    score += 10;
-    factors.push({ label: 'Deskundigenrapport verzekeraar', value: '+10', type: 'pro' });
-  } else if (input.expert === 'consument') {
-    score -= 10;
-    factors.push({ label: 'Deskundigenrapport consument', value: '-10', type: 'con' });
-  } else if (input.expert === 'beide') {
-    score -= 3;
-    factors.push({ label: 'Beide partijen rapport', value: '-3', type: 'neutral' });
+  // ── 4. Beslisfactoren: bewijs consument (data-driven) ──
+  if (input.evidence && bfAll.length >= 5) {
+    var sameEvidence = bfAll.filter(function(u) { return u.beslisfactoren.bewijs_consument === input.evidence; });
+    if (sameEvidence.length >= 3) {
+      var evRate = afwPct(sameEvidence);
+      var evDelta = Math.round((evRate - overallAfwRate) * 0.4);
+      score += evDelta;
+      var evLabel = 'Bewijs \u201C' + input.evidence + '\u201D \u2192 ' + evRate + '% afw. (n=' + sameEvidence.length + ')';
+      factors.push({ label: evLabel, value: fmtDelta(evDelta), type: evDelta > 5 ? 'pro' : evDelta < -5 ? 'con' : 'neutral' });
+    } else {
+      // Fallback to heuristic if not enough data
+      var evFallback = input.evidence === 'sterk' ? -12 : input.evidence === 'zwak' ? 12 : 0;
+      if (evFallback !== 0) {
+        score += evFallback;
+        factors.push({ label: 'Bewijs consument: ' + input.evidence, value: fmtDelta(evFallback), type: evFallback > 0 ? 'pro' : 'con' });
+      }
+    }
   }
 
-  if (input.goodwill === 'ja_redelijk') {
-    score += 8;
-    factors.push({ label: 'Redelijk coulanceaanbod', value: '+8', type: 'pro' });
-  } else if (input.goodwill === 'ja_laag') {
-    score += 3;
-    factors.push({ label: 'Laag coulanceaanbod', value: '+3', type: 'neutral' });
+  // ── 5. Beslisfactoren: deskundigenrapport (data-driven) ──
+  if (input.expert && input.expert !== 'geen' && bfAll.length >= 5) {
+    var sameExpert = bfAll.filter(function(u) { return u.beslisfactoren.deskundigenrapport === input.expert; });
+    if (sameExpert.length >= 3) {
+      var exRate = afwPct(sameExpert);
+      var exDelta = Math.round((exRate - overallAfwRate) * 0.35);
+      score += exDelta;
+      factors.push({ label: 'Deskundigenrapport \u201C' + input.expert + '\u201D \u2192 ' + exRate + '% afw. (n=' + sameExpert.length + ')', value: fmtDelta(exDelta), type: exDelta > 3 ? 'pro' : exDelta < -3 ? 'con' : 'neutral' });
+    } else {
+      var exFallback = input.expert === 'verzekeraar' ? 8 : input.expert === 'consument' ? -8 : -2;
+      score += exFallback;
+      factors.push({ label: 'Deskundigenrapport: ' + input.expert, value: fmtDelta(exFallback), type: exFallback > 0 ? 'pro' : 'con' });
+    }
   }
 
-  if (input.amount > 50000) {
-    score -= 3;
-    factors.push({ label: 'Hoog bedrag (>50k)', value: '-3', type: 'neutral' });
-  } else if (input.amount > 0 && input.amount < 2000) {
-    score += 3;
-    factors.push({ label: 'Laag bedrag (<2k)', value: '+3', type: 'neutral' });
+  // ── 6. Beslisfactoren: polisvoorwaarden duidelijkheid (data-driven) ──
+  if (bfAll.length >= 5) {
+    var onduidelijk = bfAll.filter(function(u) { return u.beslisfactoren.polisvoorwaarden_duidelijk === false; });
+    var duidelijk = bfAll.filter(function(u) { return u.beslisfactoren.polisvoorwaarden_duidelijk === true; });
+    if (onduidelijk.length >= 3 && duidelijk.length >= 3) {
+      var ondRate = afwPct(onduidelijk);
+      var duiRate = afwPct(duidelijk);
+      var verschil = duiRate - ondRate;
+      if (Math.abs(verschil) >= 10) {
+        factors.push({ label: 'Onduidelijke voorwaarden \u2192 ' + ondRate + '% afw. vs. duidelijk ' + duiRate + '% (n=' + onduidelijk.length + '/' + duidelijk.length + ')', value: '\u0394' + Math.abs(verschil) + '%', type: verschil > 0 ? 'con' : 'pro' });
+      }
+    }
   }
 
+  // ── 7. Beslisfactoren: consument nalatig (data-driven) ──
+  if (bfAll.length >= 5) {
+    var nalatig = bfAll.filter(function(u) { return u.beslisfactoren.consument_nalatig === true; });
+    if (nalatig.length >= 3) {
+      var nalRate = afwPct(nalatig);
+      var nalDelta = Math.round((nalRate - overallAfwRate) * 0.25);
+      if (Math.abs(nalDelta) >= 3) {
+        factors.push({ label: 'Nalatigheid consument \u2192 ' + nalRate + '% afw. (n=' + nalatig.length + ')', value: fmtDelta(nalDelta), type: 'neutral' });
+      }
+    }
+  }
+
+  // ── 8. Beslisfactoren: informatieplicht geschonden (data-driven) ──
+  if (bfAll.length >= 5) {
+    var infoSchending = bfAll.filter(function(u) { return u.beslisfactoren.verzekeraar_informatieplicht_geschonden === true; });
+    if (infoSchending.length >= 2) {
+      var infoRate = afwPct(infoSchending);
+      var infoDelta = Math.round((infoRate - overallAfwRate) * 0.3);
+      score += infoDelta;
+      factors.push({ label: 'Informatieplicht geschonden \u2192 ' + infoRate + '% afw. (n=' + infoSchending.length + ')', value: fmtDelta(infoDelta), type: infoDelta < -3 ? 'con' : infoDelta > 3 ? 'pro' : 'neutral' });
+    }
+  }
+
+  // ── 9. Coulance (data-driven + input) ──
+  if (bfAll.length >= 5) {
+    var coulYes = bfAll.filter(function(u) { return u.beslisfactoren.coulance_aangeboden === true; });
+    var coulNo = bfAll.filter(function(u) { return u.beslisfactoren.coulance_aangeboden === false; });
+    if (coulYes.length >= 3 && coulNo.length >= 3) {
+      var coulYesRate = afwPct(coulYes);
+      var coulNoRate = afwPct(coulNo);
+      if (input.goodwill === 'ja_redelijk' || input.goodwill === 'ja_laag') {
+        var coulAdj = Math.round((coulYesRate - overallAfwRate) * 0.3);
+        score += coulAdj;
+        factors.push({ label: 'Met coulance \u2192 ' + coulYesRate + '% afw. vs. zonder ' + coulNoRate + '% (n=' + coulYes.length + '/' + coulNo.length + ')', value: fmtDelta(coulAdj), type: coulAdj > 3 ? 'pro' : coulAdj < -3 ? 'con' : 'neutral' });
+      } else {
+        var noCoulAdj = Math.round((coulNoRate - overallAfwRate) * 0.2);
+        if (Math.abs(noCoulAdj) >= 3) {
+          score += noCoulAdj;
+          factors.push({ label: 'Geen coulance \u2192 ' + coulNoRate + '% afw. (n=' + coulNo.length + ')', value: fmtDelta(noCoulAdj), type: noCoulAdj > 3 ? 'pro' : 'con' });
+        }
+      }
+    }
+  }
+
+  // ── 10. Bedragrange-analyse ──
+  if (input.amount > 0) {
+    var lo = input.amount * 0.3;
+    var hi = input.amount * 3;
+    var amountPeers = uitspraken.filter(function(u) { var b = u.bedrag_gevorderd || 0; return b >= lo && b <= hi && b > 0; });
+    if (amountPeers.length >= 5) {
+      var amtRate = afwPct(amountPeers);
+      var amtAdj = Math.round((amtRate - overallAfwRate) * 0.2);
+      if (Math.abs(amtAdj) >= 2) {
+        score += amtAdj;
+        factors.push({ label: 'Bedragrange \u20AC' + Math.round(lo).toLocaleString('nl-NL') + '\u2013' + Math.round(hi).toLocaleString('nl-NL') + ' (' + amtRate + '% afw, n=' + amountPeers.length + ')', value: fmtDelta(amtAdj), type: amtAdj > 3 ? 'pro' : amtAdj < -3 ? 'con' : 'neutral' });
+      }
+    }
+  }
+
+  // ── 11. Juridische grondslag & context-matching ──
+  if (input.context && input.context.length > 3) {
+    var keywords = input.context.toLowerCase().split(/[\s,;.:()\-]+/).filter(function(w) { return w.length > 3; });
+    if (keywords.length > 0) {
+      var contextMatched = uitspraken.filter(function(u) {
+        var haystack = ((u.juridische_grondslag || []).join(' ') + ' ' + (u.tags || []).join(' ') + ' ' + (u.samenvatting || '') + ' ' + (u.argumenten_consument || []).join(' ') + ' ' + (u.argumenten_verzekeraar || []).join(' ')).toLowerCase();
+        var hits = 0;
+        keywords.forEach(function(kw) { if (haystack.indexOf(kw) !== -1) hits++; });
+        return hits >= Math.max(1, Math.floor(keywords.length * 0.3));
+      });
+      if (contextMatched.length >= 2) {
+        var ctxRate = afwPct(contextMatched);
+        var ctxAdj = Math.round((ctxRate - overallAfwRate) * 0.25);
+        score += ctxAdj;
+        var topGrondslagen = findTopGrondslagen(contextMatched);
+        factors.push({ label: 'Contexmatch: ' + contextMatched.length + ' zaken' + (topGrondslagen ? ' (' + topGrondslagen + ')' : '') + ' \u2192 ' + ctxRate + '% afw.', value: fmtDelta(ctxAdj), type: ctxAdj > 3 ? 'pro' : ctxAdj < -3 ? 'con' : 'neutral' });
+      }
+    }
+  }
+
+  // ── 12. Bindend advies info ──
   if (input.binding === 'bindend') {
-    factors.push({ label: 'Bindend advies', value: 'info', type: 'neutral' });
+    var bindend = uitspraken.filter(function(u) { return u.bindend === true; });
+    var nietBindend = uitspraken.filter(function(u) { return u.bindend === false; });
+    if (bindend.length >= 3 && nietBindend.length >= 3) {
+      var bRate = afwPct(bindend);
+      var nbRate = afwPct(nietBindend);
+      if (Math.abs(bRate - nbRate) >= 5) {
+        var bAdj = Math.round((bRate - nbRate) * 0.15);
+        score += bAdj;
+        factors.push({ label: 'Bindend advies (' + bRate + '% afw.) vs. niet-bindend (' + nbRate + '%)', value: fmtDelta(bAdj), type: 'neutral' });
+      } else {
+        factors.push({ label: 'Bindend advies', value: 'info', type: 'neutral' });
+      }
+    }
   }
 
+  // ── 13. Polisvoorwaarden-upload analyse ──
   if (policyAnalysis) {
     var rs = policyAnalysis.risicoscore || 0;
     if (rs >= 7) {
-      var a = -Math.round((rs - 5) * 3);
-      score += a;
-      factors.push({ label: 'Polisvoorwaarden risico ' + rs + '/10', value: String(a), type: 'con' });
+      var pa = -Math.round((rs - 5) * 3);
+      score += pa;
+      factors.push({ label: 'Polisvoorwaarden risico ' + rs + '/10', value: String(pa), type: 'con' });
     } else if (rs >= 4) {
-      var a2 = -Math.round((rs - 5) * 2);
-      score += a2;
-      factors.push({ label: 'Polisvoorwaarden risico ' + rs + '/10', value: (a2 >= 0 ? '+' : '') + a2, type: 'neutral' });
+      var pa2 = -Math.round((rs - 5) * 2);
+      score += pa2;
+      factors.push({ label: 'Polisvoorwaarden risico ' + rs + '/10', value: fmtDelta(pa2), type: 'neutral' });
     } else if (rs > 0) {
-      var a3 = Math.round((5 - rs) * 2);
-      score += a3;
-      factors.push({ label: 'Polisvoorwaarden risico ' + rs + '/10', value: '+' + a3, type: 'pro' });
+      var pa3 = Math.round((5 - rs) * 2);
+      score += pa3;
+      factors.push({ label: 'Polisvoorwaarden risico ' + rs + '/10', value: '+' + pa3, type: 'pro' });
     }
     var hoog = (policyAnalysis.risicovolle_clausules || []).filter(function(c) { return c.ernst === 'hoog'; }).length;
     if (hoog >= 3) {
@@ -348,30 +474,72 @@ function analyzeCase(input) {
 
   score = Math.max(5, Math.min(95, score));
 
+  // ── Betrouwbaarheid ──
   var relevantMatches = uitspraken.filter(function(u) { return u.type_verzekering === input.type || u.kerngeschil === input.dispute; }).length;
+  var bfRelevant = bfAll.filter(function(u) { return u.type_verzekering === input.type || u.kerngeschil === input.dispute; }).length;
   var confidence = 'laag';
-  var confidencePct = 25;
-  if (relevantMatches >= 20) { confidence = 'hoog'; confidencePct = 85; }
-  else if (relevantMatches >= 10) { confidence = 'gemiddeld'; confidencePct = 60; }
-  else if (relevantMatches >= 5) { confidence = 'beperkt'; confidencePct = 40; }
+  var confidencePct = 20;
+  // Meer data = meer betrouwbaar
+  if (relevantMatches >= 30) { confidence = 'hoog'; confidencePct = 85; }
+  else if (relevantMatches >= 15) { confidence = 'hoog'; confidencePct = 75; }
+  else if (relevantMatches >= 8) { confidence = 'gemiddeld'; confidencePct = 60; }
+  else if (relevantMatches >= 4) { confidence = 'beperkt'; confidencePct = 40; }
+  // Bonus voor beschikbare beslisfactoren
+  if (bfRelevant >= 10) confidencePct = Math.min(95, confidencePct + 10);
+  else if (bfRelevant >= 5) confidencePct = Math.min(95, confidencePct + 5);
+  // Bonus voor type+geschil combo
+  if (combiMatches.length >= 5) confidencePct = Math.min(95, confidencePct + 8);
   if (policyAnalysis) confidencePct = Math.min(95, confidencePct + 10);
 
+  // ── Vergelijkbare uitspraken (verbeterde relevantie) ──
   var similar = uitspraken
     .filter(function(u) { return u.type_verzekering === input.type || u.kerngeschil === input.dispute; })
     .map(function(u) {
       var rel = 0;
-      if (u.type_verzekering === input.type) rel += 40;
-      if (u.kerngeschil === input.dispute) rel += 40;
+      // Type en geschil matches
+      if (u.type_verzekering === input.type) rel += 25;
+      if (u.kerngeschil === input.dispute) rel += 25;
+      if (u.type_verzekering === input.type && u.kerngeschil === input.dispute) rel += 15; // combi-bonus
+      // Beslisfactoren matches
       if (u.beslisfactoren) {
         if (u.beslisfactoren.bewijs_consument === input.evidence) rel += 10;
-        if (u.beslisfactoren.deskundigenrapport === input.expert) rel += 10;
+        if (u.beslisfactoren.deskundigenrapport === input.expert) rel += 8;
+        if (input.goodwill !== 'nee' && u.beslisfactoren.coulance_aangeboden === true) rel += 5;
+        if (input.goodwill === 'nee' && u.beslisfactoren.coulance_aangeboden === false) rel += 5;
       }
-      return { nr: u.uitspraaknr, desc: u.samenvatting || '', outcome: u.uitkomst, relevance: rel + '%', pdfUrl: u.bron_url || '' };
+      // Bedrag proximity
+      if (input.amount > 0 && u.bedrag_gevorderd > 0) {
+        var ratio = Math.min(input.amount, u.bedrag_gevorderd) / Math.max(input.amount, u.bedrag_gevorderd);
+        rel += Math.round(ratio * 7);
+      }
+      // Context/juridische grondslag match
+      if (input.context && input.context.length > 3) {
+        var ctx = input.context.toLowerCase();
+        var uText = ((u.juridische_grondslag || []).join(' ') + ' ' + (u.tags || []).join(' ') + ' ' + (u.samenvatting || '')).toLowerCase();
+        var ctxWords = ctx.split(/[\s,;.:()\-]+/).filter(function(w) { return w.length > 3; });
+        var ctxHits = 0;
+        ctxWords.forEach(function(w) { if (uText.indexOf(w) !== -1) ctxHits++; });
+        if (ctxWords.length > 0) rel += Math.round(ctxHits / ctxWords.length * 10);
+      }
+      rel = Math.min(100, rel);
+      return { nr: u.uitspraaknr, desc: u.samenvatting || '', outcome: u.uitkomst, relevance: rel + '%', pdfUrl: u.bron_url || '', grondslag: (u.juridische_grondslag || []).slice(0, 2).join(', ') };
     })
     .sort(function(a, b) { return parseInt(b.relevance) - parseInt(a.relevance); })
-    .slice(0, 6);
+    .slice(0, 8);
 
   return { score: score, factors: factors, similar: similar, dataPoints: uitspraken.length, confidence: confidence, confidencePct: confidencePct, relevantMatches: relevantMatches };
+}
+
+// ── Helper: vind meest voorkomende juridische grondslagen in een set uitspraken ──
+function findTopGrondslagen(matches) {
+  var counts = {};
+  matches.forEach(function(u) {
+    (u.juridische_grondslag || []).forEach(function(g) {
+      counts[g] = (counts[g] || 0) + 1;
+    });
+  });
+  var sorted = Object.keys(counts).sort(function(a, b) { return counts[b] - counts[a]; });
+  return sorted.slice(0, 2).join(', ');
 }
 
 function renderResults(result, input) {
@@ -413,7 +581,8 @@ function renderResults(result, input) {
     html += '<div class="similar-cases animate-in delay-3"><h3>Vergelijkbare uitspraken</h3>' +
       sim.map(function(c) {
         var kifidUrl = c.pdfUrl || ('https://www.kifid.nl/kifid-kennis-en-uitspraken/uitspraken/?SearchTerm=' + encodeURIComponent('uitspraak-' + c.nr));
-        return '<a href="' + kifidUrl + '" target="_blank" rel="noopener" class="case-row case-row-link"><span class="case-nr">' + c.nr + '</span><span class="case-desc">' + c.desc + '</span><span class="case-outcome ' + c.outcome + '">' + c.outcome + '</span><span class="case-relevance">' + c.relevance + ' <svg style="width:14px;height:14px;vertical-align:middle;opacity:0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span></a>';
+        var grondslagHtml = c.grondslag ? '<span class="case-grondslag" style="font-size:11px;color:var(--text-dim);display:block;margin-top:2px;">' + c.grondslag + '</span>' : '';
+        return '<a href="' + kifidUrl + '" target="_blank" rel="noopener" class="case-row case-row-link"><span class="case-nr">' + c.nr + '</span><span class="case-desc">' + c.desc + grondslagHtml + '</span><span class="case-outcome ' + c.outcome + '">' + c.outcome + '</span><span class="case-relevance">' + c.relevance + ' <svg style="width:14px;height:14px;vertical-align:middle;opacity:0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span></a>';
       }).join('') + '</div>';
   }
 
