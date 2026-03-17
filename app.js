@@ -21,15 +21,288 @@ async function autoLoadModel() {
     if (!response.ok) return;
     trainedModel = await response.json();
     var n = (trainedModel.meta || {}).totaal_uitspraken || 0;
-    console.log('Model geladen: ' + n + ' uitspraken getraind');
+    var versie = (trainedModel.meta || {}).versie || '1.0';
+    var hasEnsemble = !!(trainedModel.ensemble);
+    console.log('Model geladen v' + versie + ': ' + n + ' uitspraken' + (hasEnsemble ? ', ensemble (LR+NB+TF-IDF)' : ''));
+    if (hasEnsemble && trainedModel.ensemble.cross_validation) {
+      console.log('  Cross-val accuracy: ' + (trainedModel.ensemble.cross_validation.accuracy * 100).toFixed(1) + '%');
+    }
     // Show model status in UI
     var statusEl = document.getElementById('dataStatus');
     if (statusEl && uitspraken.length > 0) {
-      statusEl.textContent = uitspraken.length + ' uitspraken geladen, model getraind op ' + n + ' zaken.';
+      statusEl.textContent = uitspraken.length + ' uitspraken geladen, ensemble model v' + versie + ' (' + n + ' zaken).';
     }
   } catch (e) {
     console.log('Geen getraind model gevonden, runtime analyse wordt gebruikt.');
   }
+}
+
+// ── Ensemble Predictor (browser-side inference) ──
+
+var ENSEMBLE_JURIDISCHE_TERMEN = [
+  "bewijslast", "redelijkheid en billijkheid", "zorgplicht", "contra proferentem",
+  "art. 6:248 bw", "art. 7:940 bw", "avg", "onaanvaardbaar", "haviltex",
+  "mededelingsplicht", "informatieplicht", "klachtplicht", "schadebeperkingsplicht",
+  "dekkingsomvang", "eigen schuld", "eigen gebrek", "merkelijke schuld",
+  "grove nalatigheid", "opzet", "molest", "polisvoorwaarden", "uitsluitingsclausule",
+  "kernbeding", "algemene voorwaarden", "verjaringstermijn", "schending",
+  "onredelijk bezwarend", "dwingend recht", "art. 7:941 bw", "art. 7:943 bw",
+  "art. 7:952 bw", "art. 7:953 bw", "art. 6:233 bw", "art. 6:236 bw",
+  "art. 6:237 bw", "coulance", "bindend advies", "geschillencommissie",
+  "commissie van beroep", "wft", "bgfo"
+];
+
+var ENSEMBLE_INSURANCE_TYPES = [
+  "autoverzekering", "woonhuisverzekering", "inboedelverzekering",
+  "reisverzekering", "aansprakelijkheidsverzekering", "rechtsbijstandverzekering",
+  "levensverzekering", "arbeidsongeschiktheidsverzekering", "zorgverzekering",
+  "beleggingsverzekering", "overlijdensrisicoverzekering", "opstalverzekering",
+  "bromfietsverzekering", "brandverzekering", "transportverzekering", "overig"
+];
+
+var ENSEMBLE_DISPUTE_TYPES = [
+  "dekkingsweigering", "uitleg_voorwaarden", "schadevaststelling",
+  "premiegeschil", "mededelingsplicht", "opzegging", "zorgplicht",
+  "informatievoorziening", "clausule", "vertraging", "fraude",
+  "eigen_gebrek", "overig"
+];
+
+var ENSEMBLE_EXPERT_TYPES = ["geen", "consument", "verzekeraar", "beide", "onafhankelijk"];
+var ENSEMBLE_OUTCOME_NAMES = ["afgewezen", "toegewezen", "deels"];
+
+function ensembleBuildFeatureVector(input, textForInput) {
+  var features = [];
+  var text = textForInput.toLowerCase();
+
+  // 1. Type verzekering (one-hot)
+  ENSEMBLE_INSURANCE_TYPES.forEach(function(t) { features.push(input.type === t ? 1 : 0); });
+
+  // 2. Kerngeschil (one-hot)
+  ENSEMBLE_DISPUTE_TYPES.forEach(function(d) { features.push(input.dispute === d ? 1 : 0); });
+
+  // 3. Bedrag features
+  var bedrag = input.amount || 0;
+  features.push(Math.log1p(bedrag));
+  features.push(bedrag > 50000 ? 1 : 0);
+  features.push(bedrag > 100000 ? 1 : 0);
+  features.push(bedrag > 0 && bedrag <= 5000 ? 1 : 0);
+
+  // 4. Bindend advies
+  features.push(input.binding === 'bindend' ? 1 : 0);
+
+  // 5. Commissie type (default geschillencommissie)
+  features.push(0);
+
+  // 6. Jaar (genormaliseerd)
+  var jaar = new Date().getFullYear();
+  features.push((jaar - 2000) / 26.0);
+
+  // 7. Beslisfactoren
+  var bewijsMap = { sterk: 3, gemiddeld: 2, zwak: 1, geen: 0 };
+  var bewijsScore = (bewijsMap[input.evidence] || 2) / 3.0;
+  features.push(bewijsScore);
+
+  // Deskundigenrapport (one-hot)
+  ENSEMBLE_EXPERT_TYPES.forEach(function(e) { features.push(input.expert === e ? 1 : 0); });
+
+  // Boolean beslisfactoren
+  features.push(1); // polisvoorwaarden_duidelijk (default ja)
+  features.push(0); // consument_nalatig (default nee)
+  features.push(0); // verzekeraar_informatieplicht_geschonden (default nee)
+  features.push(input.goodwill !== 'nee' ? 1 : 0); // coulance
+
+  // 8. Juridische termen (counts)
+  ENSEMBLE_JURIDISCHE_TERMEN.forEach(function(term) {
+    var count = 0;
+    var idx = 0;
+    while ((idx = text.indexOf(term, idx)) !== -1) { count++; idx += term.length; }
+    features.push(count);
+  });
+
+  // 9. Tekststatistieken
+  var words = text.split(/\s+/).filter(function(w) { return w.length > 0; });
+  var nWords = words.length;
+  var avgWordLen = nWords > 0 ? words.reduce(function(s, w) { return s + w.length; }, 0) / nWords : 0;
+  var sentences = text.split(/[.!?]+/).filter(function(s) { return s.trim().length > 0; });
+  var nSentences = Math.max(1, sentences.length);
+  var uniqueWords = {};
+  words.forEach(function(w) { if (w.length > 2) uniqueWords[w.toLowerCase()] = true; });
+  var diversity = nWords > 0 ? Object.keys(uniqueWords).length / nWords : 0;
+
+  features.push(nWords / 100.0);
+  features.push(avgWordLen / 10.0);
+  features.push(nWords / nSentences / 30.0);
+  features.push(diversity);
+
+  // 10. Interactie-features
+  var bewijsVal = bewijsMap[input.evidence] || 2;
+  features.push(bewijsVal / 3.0 * Math.log1p(bedrag) / 15.0);
+  var typeIdx = ENSEMBLE_INSURANCE_TYPES.indexOf(input.type || 'overig');
+  if (typeIdx < 0) typeIdx = ENSEMBLE_INSURANCE_TYPES.length - 1;
+  var dispIdx = ENSEMBLE_DISPUTE_TYPES.indexOf(input.dispute || 'overig');
+  if (dispIdx < 0) dispIdx = ENSEMBLE_DISPUTE_TYPES.length - 1;
+  features.push(typeIdx * ENSEMBLE_DISPUTE_TYPES.length + dispIdx);
+  features.push(0 * bewijsVal / 3.0); // nalatig × bewijs (default nalatig=0)
+  features.push((input.goodwill !== 'nee' ? 1 : 0) * Math.log1p(bedrag) / 15.0);
+  features.push(0); // info_geschonden × pv_onduidelijk
+
+  // 11. Tags
+  features.push(0); // heeft_tags
+  features.push(0); // n_tags
+
+  // 12. Totaal juridische termen
+  var totalJur = 0;
+  ENSEMBLE_JURIDISCHE_TERMEN.forEach(function(term) {
+    var idx2 = 0;
+    while ((idx2 = text.indexOf(term, idx2)) !== -1) { totalJur++; idx2 += term.length; }
+  });
+  features.push(totalJur / 5.0);
+
+  return features;
+}
+
+function ensemblePredict(input) {
+  var tm = trainedModel;
+  if (!tm || !tm.ensemble) return null;
+  var ens = tm.ensemble;
+  var lr = ens.logreg;
+  var nb = ens.naive_bayes;
+  var tfidf = ens.tfidf;
+  var weights = ens.ensemble_weights;
+
+  if (!lr || !nb || !tfidf || !weights) return null;
+
+  // Build text from input context
+  var text = (input.context || '') + ' ' + (input.type || '') + ' ' + (input.dispute || '');
+
+  // ── Model 1: Logistic Regression ──
+  var features = ensembleBuildFeatureVector(input, text);
+
+  // Standardize
+  var scaled = features.map(function(val, i) {
+    var mean = lr.scaler_mean[i] || 0;
+    var std = lr.scaler_std[i] || 1;
+    return std > 0 ? (val - mean) / std : 0;
+  });
+
+  // Logits per klasse
+  var lrProbs = [];
+  for (var c = 0; c < lr.weights.length; c++) {
+    var logit = lr.bias[c];
+    for (var j = 0; j < scaled.length; j++) {
+      logit += lr.weights[c][j] * scaled[j];
+    }
+    lrProbs.push(logit);
+  }
+
+  // Softmax
+  var maxLogit = Math.max.apply(null, lrProbs);
+  var expSum = 0;
+  lrProbs = lrProbs.map(function(l) { var e = Math.exp(l - maxLogit); expSum += e; return e; });
+  lrProbs = lrProbs.map(function(e) { return e / expSum; });
+
+  // Map naar [afgewezen, toegewezen, deels] op basis van classes
+  var lrProbsFull = [0, 0, 0];
+  lr.classes.forEach(function(cls, i) { lrProbsFull[cls] = lrProbs[i]; });
+
+  // ── Model 2: Naive Bayes (via TF-IDF features) ──
+  // Tokenize
+  var tokens = text.toLowerCase().split(/[^a-z\u00e0-\u00ff0-9]+/).filter(function(t) { return t.length > 1; });
+
+  // Bouw TF-IDF vector
+  var vocab = tfidf.vocabulary;
+  var idf = tfidf.idf;
+  var termFreqs = {};
+  tokens.forEach(function(t) { if (vocab[t] !== undefined) { termFreqs[vocab[t]] = (termFreqs[vocab[t]] || 0) + 1; } });
+
+  // Bigrams
+  for (var bi = 0; bi < tokens.length - 1; bi++) {
+    var bigram = tokens[bi] + ' ' + tokens[bi + 1];
+    if (vocab[bigram] !== undefined) { termFreqs[vocab[bigram]] = (termFreqs[vocab[bigram]] || 0) + 1; }
+  }
+
+  // TF-IDF vector (sparse)
+  var tfidfVec = {};
+  var tfidfNorm = 0;
+  for (var termIdx in termFreqs) {
+    var tf = 1 + Math.log(termFreqs[termIdx]); // sublinear_tf
+    var tfidfVal = tf * (idf[termIdx] || 0);
+    tfidfVec[termIdx] = tfidfVal;
+    tfidfNorm += tfidfVal * tfidfVal;
+  }
+  tfidfNorm = Math.sqrt(tfidfNorm) || 1;
+
+  // NB log probabilities
+  var nbProbs = [0, 0, 0];
+  nb.classes.forEach(function(cls, clsIdx) {
+    var logProb = nb.log_priors[clsIdx];
+    for (var tIdx in termFreqs) {
+      var count = termFreqs[tIdx];
+      if (nb.feature_log_probs[clsIdx] && nb.feature_log_probs[clsIdx][tIdx] !== undefined) {
+        logProb += count * nb.feature_log_probs[clsIdx][tIdx];
+      }
+    }
+    nbProbs[cls] = logProb;
+  });
+
+  // Softmax NB
+  var nbMax = Math.max.apply(null, nbProbs);
+  var nbExpSum = 0;
+  nbProbs = nbProbs.map(function(l) { var e = Math.exp(l - nbMax); nbExpSum += e; return e; });
+  nbProbs = nbProbs.map(function(e) { return e / nbExpSum; });
+
+  // ── Model 3: TF-IDF Cosine Similarity ──
+  var tfidfProbs = [0, 0, 0];
+  ENSEMBLE_OUTCOME_NAMES.forEach(function(cls, clsIdx) {
+    var centroid = tfidf.centroids[cls];
+    if (!centroid) return;
+    var dot = 0;
+    var centNorm = 0;
+    for (var ci in centroid) {
+      centNorm += centroid[ci] * centroid[ci];
+      if (tfidfVec[ci]) {
+        dot += (tfidfVec[ci] / tfidfNorm) * centroid[ci];
+      }
+    }
+    centNorm = Math.sqrt(centNorm) || 1;
+    tfidfProbs[clsIdx] = Math.max(0, dot / centNorm);
+  });
+
+  // Normaliseer tfidf probs
+  var tfidfSum = tfidfProbs.reduce(function(a, b) { return a + b; }, 0) || 1;
+  tfidfProbs = tfidfProbs.map(function(p) { return p / tfidfSum; });
+
+  // ── Ensemble ──
+  var wLr = weights.logreg || 0.33;
+  var wNb = weights.nb || 0.34;
+  var wTfidf = weights.tfidf || 0.33;
+
+  var ensembleProbs = [
+    wLr * lrProbsFull[0] + wNb * nbProbs[0] + wTfidf * tfidfProbs[0],
+    wLr * lrProbsFull[1] + wNb * nbProbs[1] + wTfidf * tfidfProbs[1],
+    wLr * lrProbsFull[2] + wNb * nbProbs[2] + wTfidf * tfidfProbs[2],
+  ];
+
+  // Normaliseer
+  var ensSum = ensembleProbs.reduce(function(a, b) { return a + b; }, 0) || 1;
+  ensembleProbs = ensembleProbs.map(function(p) { return p / ensSum; });
+
+  var predicted = ensembleProbs.indexOf(Math.max.apply(null, ensembleProbs));
+
+  return {
+    probs: {
+      afgewezen: Math.round(ensembleProbs[0] * 1000) / 10,
+      toegewezen: Math.round(ensembleProbs[1] * 1000) / 10,
+      deels: Math.round(ensembleProbs[2] * 1000) / 10,
+    },
+    predicted: ENSEMBLE_OUTCOME_NAMES[predicted],
+    modelProbs: {
+      logreg: lrProbsFull,
+      nb: nbProbs,
+      tfidf: tfidfProbs,
+    },
+    cvAccuracy: (ens.cross_validation || {}).accuracy || 0,
+  };
 }
 
 // ── Theme ──
@@ -584,6 +857,34 @@ function analyzeCase(input) {
 
   score = Math.max(5, Math.min(95, score));
 
+  // ── 15. Ensemble model integratie ──
+  var ensembleResult = ensemblePredict(input);
+  if (ensembleResult) {
+    // Converteer ensemble kans naar score (0=uitkeren, 100=afwachten)
+    // afgewezen = verzekeraar wint = hoge score
+    var ensScore = Math.round(ensembleResult.probs.afgewezen + ensembleResult.probs.deels * 0.5);
+
+    // Blend statistisch model met ensemble (60% ensemble, 40% statistisch)
+    var oldScore = score;
+    score = Math.round(0.6 * ensScore + 0.4 * score);
+    score = Math.max(5, Math.min(95, score));
+
+    var ensAdj = score - oldScore;
+    if (Math.abs(ensAdj) >= 2) {
+      factors.push({
+        label: 'Ensemble model (LR+NB+TF-IDF, cv=' + Math.round(ensembleResult.cvAccuracy * 100) + '%): ' + ensembleResult.probs.afgewezen + '% afw. / ' + ensembleResult.probs.toegewezen + '% toeg. / ' + ensembleResult.probs.deels + '% deels',
+        value: fmtDelta(ensAdj),
+        type: ensAdj > 3 ? 'pro' : ensAdj < -3 ? 'con' : 'neutral'
+      });
+    } else {
+      factors.push({
+        label: 'Ensemble model bevestigt statistische analyse (' + ensembleResult.probs.afgewezen + '% afw.)',
+        value: 'bevestigd',
+        type: 'neutral'
+      });
+    }
+  }
+
   // ── Betrouwbaarheid ──
   var relevantMatches = uitspraken.filter(function(u) { return u.type_verzekering === input.type || u.kerngeschil === input.dispute; }).length;
   var bfRelevant = bfAll.filter(function(u) { return u.type_verzekering === input.type || u.kerngeschil === input.dispute; }).length;
@@ -608,6 +909,8 @@ function analyzeCase(input) {
   else if (confidencePct >= 55) confidence = 'gemiddeld';
   else if (confidencePct >= 35) confidence = 'beperkt';
   if (policyAnalysis) confidencePct = Math.min(95, confidencePct + 10);
+  // Ensemble model boost
+  if (ensembleResult) confidencePct = Math.min(95, confidencePct + 10);
 
   // ── Vergelijkbare uitspraken (verbeterde relevantie) ──
   var similar = uitspraken
@@ -645,7 +948,7 @@ function analyzeCase(input) {
     .sort(function(a, b) { return parseInt(b.relevance) - parseInt(a.relevance); })
     .slice(0, 8);
 
-  return { score: score, factors: factors, similar: similar, dataPoints: uitspraken.length, confidence: confidence, confidencePct: confidencePct, relevantMatches: relevantMatches };
+  return { score: score, factors: factors, similar: similar, dataPoints: uitspraken.length, confidence: confidence, confidencePct: confidencePct, relevantMatches: relevantMatches, ensemble: ensembleResult };
 }
 
 // ── Helper: vind meest voorkomende juridische grondslagen in een set uitspraken ──
@@ -785,12 +1088,48 @@ function renderResults(result, input) {
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
           'Methodologie' +
         '</div>' +
-        '<p>Deze inschatting is gebaseerd op statistische analyse van ' + result.dataPoints.toLocaleString('nl-NL') + ' openbare KIFID-uitspraken. ' +
-        'Het model weegt verzekeringstype, geschiltype, bewijspositie, deskundigenrapporten en polisvoorwaarden. ' +
-        'Elke factor wordt vergeleken met historische uitkomsten van vergelijkbare zaken.</p>' +
+        '<p>Deze inschatting combineert een <strong>ensemble van drie modellen</strong> (Logistic Regression, Naive Bayes, TF-IDF similarity) met statistische analyse van ' + result.dataPoints.toLocaleString('nl-NL') + ' openbare KIFID-uitspraken. ' +
+        'Het model is gevalideerd met 5-fold cross-validatie' + (result.ensemble ? ' (accuracy: ' + Math.round(result.ensemble.cvAccuracy * 100) + '%)' : '') + '. ' +
+        '99 gestructureerde features (verzekeringstype, geschiltype, 41 juridische termen, interactie-features) en 800 tekstfeatures worden gewogen.</p>' +
       '</div>' +
     '</div>' +
   '</div>';
+
+  // ── Ensemble model details ──
+  if (result.ensemble) {
+    var ep = result.ensemble.probs;
+    html += '<div class="report-card animate-in delay-2" style="grid-column:span 1;">' +
+      '<div class="report-card-header">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' +
+        '<h3>Ensemble Model Analyse</h3>' +
+      '</div>' +
+      '<p class="report-card-desc">Probabiliteiten berekend door drie onafhankelijke ML-modellen, gewogen gecombineerd.</p>' +
+      '<div class="report-ensemble-probs">' +
+        '<div class="report-prob-row">' +
+          '<span class="report-prob-label">Afgewezen</span>' +
+          '<div class="report-prob-bar"><div class="report-prob-fill" style="width:' + ep.afgewezen + '%;background:var(--red);"></div></div>' +
+          '<span class="report-prob-value">' + ep.afgewezen + '%</span>' +
+        '</div>' +
+        '<div class="report-prob-row">' +
+          '<span class="report-prob-label">Toegewezen</span>' +
+          '<div class="report-prob-bar"><div class="report-prob-fill" style="width:' + ep.toegewezen + '%;background:var(--green);"></div></div>' +
+          '<span class="report-prob-value">' + ep.toegewezen + '%</span>' +
+        '</div>' +
+        '<div class="report-prob-row">' +
+          '<span class="report-prob-label">Deels</span>' +
+          '<div class="report-prob-bar"><div class="report-prob-fill" style="width:' + ep.deels + '%;background:var(--amber);"></div></div>' +
+          '<span class="report-prob-value">' + ep.deels + '%</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border-subtle);font-size:12px;color:var(--text-dim);">' +
+        '<div style="display:flex;gap:16px;flex-wrap:wrap;">' +
+          '<span>Logistic Regression: <strong>' + Math.round(result.ensemble.modelProbs.logreg[0]*100) + '/' + Math.round(result.ensemble.modelProbs.logreg[1]*100) + '/' + Math.round(result.ensemble.modelProbs.logreg[2]*100) + '%</strong></span>' +
+          '<span>Naive Bayes: <strong>' + Math.round(result.ensemble.modelProbs.nb[0]*100) + '/' + Math.round(result.ensemble.modelProbs.nb[1]*100) + '/' + Math.round(result.ensemble.modelProbs.nb[2]*100) + '%</strong></span>' +
+          '<span>TF-IDF: <strong>' + Math.round(result.ensemble.modelProbs.tfidf[0]*100) + '/' + Math.round(result.ensemble.modelProbs.tfidf[1]*100) + '/' + Math.round(result.ensemble.modelProbs.tfidf[2]*100) + '%</strong></span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
 
   // ── Vergelijkbare uitspraken ──
   if (sim.length > 0) {

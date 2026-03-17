@@ -1447,3 +1447,47 @@ code {
 }
 
 .report-disclaimer p { margin: 0; }
+
+/* Ensemble probability bars */
+.report-ensemble-probs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.report-prob-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.report-prob-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 80px;
+}
+
+.report-prob-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-alt);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.report-prob-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease;
+  min-width: 2px;
+}
+
+.report-prob-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
