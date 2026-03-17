@@ -662,47 +662,163 @@ function findTopGrondslagen(matches) {
 
 function renderResults(result, input) {
   var s = result.score, f = result.factors, sim = result.similar;
-  var verdict = s >= 60 ? 'Procedure afwachten' : s <= 40 ? 'Overweeg uitkeren' : 'Onzeker \u2014 nader beoordelen';
+  var verdict = s >= 60 ? 'Procedure afwachten' : s <= 40 ? 'Overweeg uitkering' : 'Nader beoordelen';
+  var verdictSub = s >= 60 ? 'Op basis van historische KIFID-uitspraken is de kans groot dat de vordering wordt afgewezen.' :
+    s <= 40 ? 'Er zijn significante risicofactoren. Overweeg een schikking of verhoogd coulanceaanbod.' :
+    'De uitkomst is onzeker. Aanvullende juridische analyse wordt aanbevolen.';
   var vc = s >= 60 ? 'afwachten' : s <= 40 ? 'uitkeren' : 'onzeker';
   var bc = s >= 60 ? 'amber' : s <= 40 ? 'green' : 'amber';
   var cc = result.confidencePct >= 60 ? 'var(--green)' : result.confidencePct >= 40 ? 'var(--amber)' : 'var(--red)';
+  var confLabel = result.confidencePct >= 75 ? 'Hoog' : result.confidencePct >= 55 ? 'Gemiddeld' : result.confidencePct >= 35 ? 'Beperkt' : 'Laag';
+  var now = new Date();
+  var dateStr = now.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+  var timeStr = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+  var typeLabel = input.type ? input.type.replace(/_/g, ' ') : 'niet opgegeven';
+  var disputeLabel = input.dispute ? input.dispute.replace(/_/g, ' ') : 'niet opgegeven';
 
+  // ── Report header ──
   var html =
-    '<div class="result-hero animate-in">' +
-      '<div class="verdict-label">Advies</div>' +
-      '<div class="verdict-text ' + vc + '">' + verdict + '</div>' +
-      '<p style="color:var(--text-muted);font-size:15px;margin-top:8px;">Score: <strong>' + s + '/100</strong> \u2014 ' +
-        (s >= 60 ? 'hoge kans dat vordering wordt afgewezen' : s <= 40 ? 'aanzienlijk risico op (gedeeltelijke) toewijzing' : 'uitkomst onzeker') +
-      '</p>' +
-      '<div class="confidence-bar-wrap">' +
-        '<div class="confidence-bar"><div class="confidence-fill ' + bc + '" style="width:' + s + '%"></div></div>' +
-        '<div class="confidence-labels"><span>\u2190 Uitkeren</span><span>Afwachten \u2192</span></div>' +
-      '</div>' +
-      '<div style="display:flex;justify-content:center;gap:32px;margin-top:24px;font-size:13px;color:var(--text-dim);border-top:1px solid var(--border-subtle);padding-top:18px;">' +
-        '<span>Betrouwbaarheid: <strong style="color:' + cc + '">' + result.confidence + '</strong></span>' +
-        '<span>Vergelijkbaar: <strong>' + result.relevantMatches + '</strong></span>' +
-        '<span>Dataset: <strong>' + result.dataPoints + '</strong></span>' +
-      '</div>' +
-    '</div>';
+    '<div class="report-container animate-in">' +
+      '<div class="report-header">' +
+        '<div class="report-header-top">' +
+          '<div class="report-badge">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' +
+            '<span>Risico-inschatting</span>' +
+          '</div>' +
+          '<div class="report-meta">' + dateStr + ' &middot; ' + timeStr + '</div>' +
+        '</div>' +
+        '<div class="report-case-summary">' +
+          '<span class="report-case-tag">' + typeLabel + '</span>' +
+          '<span class="report-case-tag">' + disputeLabel + '</span>' +
+          (input.amount > 0 ? '<span class="report-case-tag">&euro; ' + Number(input.amount).toLocaleString('nl-NL') + '</span>' : '') +
+        '</div>' +
+      '</div>';
 
-  html += '<div class="analysis-grid">' +
-    '<div class="analysis-card animate-in delay-1"><h3>Beslisfactoren</h3><ul class="factor-list">' +
-    f.map(function(x) { return '<li><span>' + x.label + '</span><span class="factor-tag ' + x.type + '">' + x.value + '</span></li>'; }).join('') +
-    '</ul></div>' +
-    '<div class="analysis-card animate-in delay-2"><h3>Aanbeveling</h3><p style="line-height:1.8;">' +
-    (s >= 60 ? 'Op basis van vergelijkbare uitspraken heeft de verzekeraar een sterke positie. Procedure afwachten lijkt verdedigbaar.' :
-     s <= 40 ? 'Significante risicofactoren aanwezig. Overweeg een schikking of verhoogd coulanceaanbod om proceskosten te beperken.' :
-     'Geen eenduidig beeld. Overweeg aanvullende juridische analyse voordat u beslist.') +
-    '</p><p style="font-size:12px;color:var(--text-dim);border-top:1px solid var(--border-subtle);padding-top:14px;margin-top:14px;">Indicatief model. Raadpleeg een specialist voor definitieve besluitvorming.</p></div></div>';
+  // ── Verdict card ──
+  html +=
+      '<div class="report-verdict">' +
+        '<div class="report-verdict-inner">' +
+          '<div class="report-verdict-score">' +
+            '<div class="report-score-ring ' + vc + '">' +
+              '<svg viewBox="0 0 120 120">' +
+                '<circle cx="60" cy="60" r="52" fill="none" stroke="var(--border)" stroke-width="8"/>' +
+                '<circle cx="60" cy="60" r="52" fill="none" stroke-width="8" stroke-linecap="round" class="report-score-arc ' + vc + '" style="stroke-dasharray: ' + Math.round(s * 3.267) + ' 326.7; transform: rotate(-90deg); transform-origin: center;"/>' +
+              '</svg>' +
+              '<div class="report-score-value">' + s + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="report-verdict-text">' +
+            '<div class="report-verdict-label">Advies</div>' +
+            '<div class="report-verdict-title ' + vc + '">' + verdict + '</div>' +
+            '<p class="report-verdict-desc">' + verdictSub + '</p>' +
+          '</div>' +
+        '</div>' +
+        '<div class="report-verdict-bar">' +
+          '<div class="report-bar-track"><div class="report-bar-fill ' + bc + '" style="width:' + s + '%"></div></div>' +
+          '<div class="report-bar-labels"><span>Uitkeren</span><span>Afwachten</span></div>' +
+        '</div>' +
+        '<div class="report-verdict-stats">' +
+          '<div class="report-stat">' +
+            '<div class="report-stat-icon" style="color:' + cc + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>' +
+            '<div><div class="report-stat-value" style="color:' + cc + '">' + confLabel + ' (' + result.confidencePct + '%)</div><div class="report-stat-label">Betrouwbaarheid</div></div>' +
+          '</div>' +
+          '<div class="report-stat">' +
+            '<div class="report-stat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>' +
+            '<div><div class="report-stat-value">' + result.relevantMatches + ' zaken</div><div class="report-stat-label">Vergelijkbaar</div></div>' +
+          '</div>' +
+          '<div class="report-stat">' +
+            '<div class="report-stat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>' +
+            '<div><div class="report-stat-value">' + result.dataPoints.toLocaleString('nl-NL') + '</div><div class="report-stat-label">Uitspraken in dataset</div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
 
+  // ── Beslisfactoren ──
+  var proFactors = f.filter(function(x) { return x.type === 'pro'; });
+  var conFactors = f.filter(function(x) { return x.type === 'con'; });
+  var neutralFactors = f.filter(function(x) { return x.type === 'neutral'; });
+
+  html += '<div class="report-grid">' +
+    '<div class="report-card animate-in delay-1">' +
+      '<div class="report-card-header">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>' +
+        '<h3>Beslisfactoren (' + f.length + ')</h3>' +
+      '</div>' +
+      '<p class="report-card-desc">Elke factor is gewogen op basis van historische KIFID-uitspraken met vergelijkbare kenmerken.</p>';
+
+  if (proFactors.length > 0) {
+    html += '<div class="report-factor-group"><div class="report-factor-group-label pro">Positie verzekeraar versterkt</div><ul class="factor-list">' +
+      proFactors.map(function(x) { return '<li><span>' + x.label + '</span><span class="factor-tag pro">' + x.value + '</span></li>'; }).join('') +
+      '</ul></div>';
+  }
+  if (conFactors.length > 0) {
+    html += '<div class="report-factor-group"><div class="report-factor-group-label con">Risicoverhogende factoren</div><ul class="factor-list">' +
+      conFactors.map(function(x) { return '<li><span>' + x.label + '</span><span class="factor-tag con">' + x.value + '</span></li>'; }).join('') +
+      '</ul></div>';
+  }
+  if (neutralFactors.length > 0) {
+    html += '<div class="report-factor-group"><div class="report-factor-group-label neutral">Contextfactoren</div><ul class="factor-list">' +
+      neutralFactors.map(function(x) { return '<li><span>' + x.label + '</span><span class="factor-tag neutral">' + x.value + '</span></li>'; }).join('') +
+      '</ul></div>';
+  }
+  html += '</div>';
+
+  // ── Aanbeveling ──
+  html +=
+    '<div class="report-card animate-in delay-2">' +
+      '<div class="report-card-header">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+        '<h3>Aanbeveling</h3>' +
+      '</div>' +
+      '<div class="report-recommendation ' + vc + '">' +
+        '<div class="report-rec-verdict">' + verdict + '</div>' +
+        '<p>' +
+        (s >= 60
+          ? 'De verzekeraar heeft op basis van vergelijkbare uitspraken een sterke positie. Het afwijzingspercentage bij soortgelijke zaken is hoog. Procedure afwachten lijkt verdedigbaar, mits de polisvoorwaarden helder zijn geformuleerd.'
+          : s <= 40
+          ? 'Er zijn substantiele risicofactoren aanwezig die wijzen op een mogelijke (gedeeltelijke) toewijzing. Overweeg proactief een schikking of verhoogd coulanceaanbod om proceskosten en reputatierisico te beperken.'
+          : 'De uitkomst van vergelijkbare zaken laat geen eenduidig patroon zien. Aanvullende juridische analyse is aanbevolen voordat een definitieve strategie wordt bepaald.') +
+        '</p>' +
+      '</div>' +
+      '<div class="report-methodology">' +
+        '<div class="report-methodology-title">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+          'Methodologie' +
+        '</div>' +
+        '<p>Deze inschatting is gebaseerd op statistische analyse van ' + result.dataPoints.toLocaleString('nl-NL') + ' openbare KIFID-uitspraken. ' +
+        'Het model weegt verzekeringstype, geschiltype, bewijspositie, deskundigenrapporten en polisvoorwaarden. ' +
+        'Elke factor wordt vergeleken met historische uitkomsten van vergelijkbare zaken.</p>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
+  // ── Vergelijkbare uitspraken ──
   if (sim.length > 0) {
-    html += '<div class="similar-cases animate-in delay-3"><h3>Vergelijkbare uitspraken</h3>' +
+    html += '<div class="report-cases animate-in delay-3">' +
+      '<div class="report-card-header">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' +
+        '<h3>Vergelijkbare KIFID-uitspraken (' + sim.length + ')</h3>' +
+      '</div>' +
+      '<p class="report-card-desc">Gesorteerd op relevantie. Klik op een uitspraak om de volledige tekst te bekijken op kifid.nl.</p>' +
       sim.map(function(c) {
         var kifidUrl = c.pdfUrl || ('https://www.kifid.nl/kifid-kennis-en-uitspraken/uitspraken/?SearchTerm=' + encodeURIComponent('uitspraak-' + c.nr));
         var grondslagHtml = c.grondslag ? '<span class="case-grondslag" style="font-size:11px;color:var(--text-dim);display:block;margin-top:2px;">' + c.grondslag + '</span>' : '';
         return '<a href="' + kifidUrl + '" target="_blank" rel="noopener" class="case-row case-row-link"><span class="case-nr">' + c.nr + '</span><span class="case-desc">' + c.desc + grondslagHtml + '</span><span class="case-outcome ' + c.outcome + '">' + c.outcome + '</span><span class="case-relevance">' + c.relevance + ' <svg style="width:14px;height:14px;vertical-align:middle;opacity:0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span></a>';
       }).join('') + '</div>';
   }
+
+  // ── Disclaimer footer ──
+  html += '<div class="report-disclaimer animate-in delay-3">' +
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' +
+    '<div>' +
+      '<strong>Disclaimer</strong>' +
+      '<p>Dit rapport is een indicatieve risico-inschatting op basis van statistische analyse van historische KIFID-uitspraken. ' +
+      'Het vormt geen juridisch advies. Raadpleeg een specialist voor definitieve besluitvorming. ' +
+      'Historische uitkomsten bieden geen garantie voor toekomstige resultaten.</p>' +
+    '</div>' +
+  '</div>';
+
+  html += '</div>'; // close report-container
 
   document.getElementById('resultsArea').innerHTML = html;
 }
