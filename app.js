@@ -354,11 +354,12 @@ function animateCount(el) {
   var target = parseInt(el.dataset.count);
   var suffix = el.dataset.suffix || '';
   var prefix = el.dataset.prefix || '';
-  var duration = target > 10000 ? 2200 : target > 100 ? 1600 : 1200;
+  var duration = target > 10000 ? 4000 : target > 100 ? 3200 : 2400;
   var start = performance.now();
 
   function ease(t) {
-    return t === 1 ? 1 : 1 - Math.pow(2, -12 * t);
+    // Cubic ease-out: snelle start, elegante vertraging
+    return 1 - Math.pow(1 - t, 3);
   }
 
   function update(now) {
