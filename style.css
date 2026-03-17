@@ -197,6 +197,25 @@ body {
 .theme-toggle:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
 .theme-toggle svg { width: 18px; height: 18px; }
 
+/* Language toggle */
+.lang-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all var(--transition);
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+.lang-toggle:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+.lang-label { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+
 /* ── Hero ── */
 .hero {
   background: var(--bg-hero);

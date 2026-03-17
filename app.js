@@ -1,4 +1,4 @@
-// ── KIFID Predictor ──
+// ── ClaimWise ──
 
 let uitspraken = [];
 let currentTab = 'predict';
@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   autoLoadModel();
   initCountAnimations();
   initTheme();
+  initLang();
   initDragDrop();
 });
 
@@ -332,6 +333,23 @@ function updateThemeIcons(isDark) {
   var moon = document.getElementById('iconMoon');
   if (sun) sun.style.display = isDark ? 'none' : 'block';
   if (moon) moon.style.display = isDark ? 'block' : 'none';
+}
+
+// ── Language Toggle ──
+function toggleLang() {
+  var currentLang = document.documentElement.getAttribute('data-lang') || 'nl';
+  var newLang = currentLang === 'nl' ? 'en' : 'nl';
+  document.documentElement.setAttribute('data-lang', newLang);
+  localStorage.setItem('lang', newLang);
+  var btn = document.getElementById('langToggle');
+  if (btn) btn.querySelector('.lang-label').textContent = newLang === 'nl' ? 'EN' : 'NL';
+}
+
+function initLang() {
+  var lang = localStorage.getItem('lang') || 'nl';
+  document.documentElement.setAttribute('data-lang', lang);
+  var btn = document.getElementById('langToggle');
+  if (btn) btn.querySelector('.lang-label').textContent = lang === 'nl' ? 'EN' : 'NL';
 }
 
 // ── Count-up Animations ──
