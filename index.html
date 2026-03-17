@@ -146,6 +146,152 @@
   </div>
 </section>
 
+<!-- Model & Data Insights -->
+<section class="model-section" id="model-insights">
+  <div class="model-inner">
+    <div style="text-align:center;">
+      <div class="section-eyebrow">Het model</div>
+      <h2 class="section-title">Getraind op 5.922 KIFID-uitspraken</h2>
+      <p class="section-desc" style="margin-left:auto;margin-right:auto;">Een ensemble van drie machine learning modellen, gevalideerd met 5-fold cross-validatie.</p>
+    </div>
+
+    <!-- Model architecture -->
+    <div class="model-arch">
+      <div class="model-arch-node model-arch-input">
+        <div class="model-arch-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="model-arch-label">Casuskenmerken</div>
+        <div class="model-arch-sub">99 features + tekst</div>
+      </div>
+      <div class="model-arch-arrow">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+      <div class="model-arch-models">
+        <div class="model-arch-node model-arch-model">
+          <div class="model-arch-label">Logistic Regression</div>
+          <div class="model-arch-sub">Gestructureerde features</div>
+          <div class="model-arch-weight">25%</div>
+        </div>
+        <div class="model-arch-node model-arch-model">
+          <div class="model-arch-label">Naive Bayes</div>
+          <div class="model-arch-sub">TF-IDF tekst</div>
+          <div class="model-arch-weight">51%</div>
+        </div>
+        <div class="model-arch-node model-arch-model">
+          <div class="model-arch-label">TF-IDF Similarity</div>
+          <div class="model-arch-sub">Cosine afstand</div>
+          <div class="model-arch-weight">24%</div>
+        </div>
+      </div>
+      <div class="model-arch-arrow">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+      <div class="model-arch-node model-arch-output">
+        <div class="model-arch-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="model-arch-label">Risico-inschatting</div>
+        <div class="model-arch-sub">Gewogen ensemble</div>
+      </div>
+    </div>
+
+    <div class="model-grid">
+      <!-- Trend chart -->
+      <div class="model-card">
+        <div class="model-card-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <h3>Afwijzingstrend</h3>
+        </div>
+        <p class="model-card-desc">Afwijzingspercentage per jaar. Dalende trend: consumenten krijgen vaker (deels) gelijk.</p>
+        <div class="trend-chart" id="trendChart">
+          <div class="trend-y-axis">
+            <span>95%</span><span>85%</span><span>75%</span>
+          </div>
+          <div class="trend-bars">
+            <div class="trend-col"><div class="trend-bar" style="height:72%" data-value="88.8%"></div><span>2017</span></div>
+            <div class="trend-col"><div class="trend-bar trend-high" style="height:92%" data-value="92.3%"></div><span>2018</span></div>
+            <div class="trend-col"><div class="trend-bar trend-high" style="height:84%" data-value="90.5%"></div><span>2019</span></div>
+            <div class="trend-col"><div class="trend-bar" style="height:70%" data-value="88.6%"></div><span>2020</span></div>
+            <div class="trend-col"><div class="trend-bar trend-low" style="height:44%" data-value="82.3%"></div><span>2021</span></div>
+            <div class="trend-col"><div class="trend-bar trend-low" style="height:38%" data-value="80.8%"></div><span>2022</span></div>
+            <div class="trend-col"><div class="trend-bar trend-low" style="height:46%" data-value="82.8%"></div><span>2023</span></div>
+            <div class="trend-col"><div class="trend-bar trend-low" style="height:48%" data-value="83.4%"></div><span>2024</span></div>
+            <div class="trend-col"><div class="trend-bar" style="height:56%" data-value="85.4%"></div><span>2025</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature importance -->
+      <div class="model-card">
+        <div class="model-card-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <h3>Sterkste voorspellers</h3>
+        </div>
+        <p class="model-card-desc">Top features uit het Logistic Regression model, gerangschikt op gewicht.</p>
+        <div class="fi-list">
+          <div class="fi-row"><span class="fi-label">Consument nalatig</span><div class="fi-bar-wrap"><div class="fi-bar fi-consumer" style="width:100%"></div></div><span class="fi-val">.339</span></div>
+          <div class="fi-row"><span class="fi-label">Nalatigheid × bewijs</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:95%"></div></div><span class="fi-val">.323</span></div>
+          <div class="fi-row"><span class="fi-label">Jaar (trend)</span><div class="fi-bar-wrap"><div class="fi-bar fi-consumer" style="width:74%"></div></div><span class="fi-val">.251</span></div>
+          <div class="fi-row"><span class="fi-label">Jur: klachtplicht</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:66%"></div></div><span class="fi-val">.223</span></div>
+          <div class="fi-row"><span class="fi-label">Overlijdensrisicoverz.</span><div class="fi-bar-wrap"><div class="fi-bar fi-consumer" style="width:63%"></div></div><span class="fi-val">.213</span></div>
+          <div class="fi-row"><span class="fi-label">Jur: verjaringstermijn</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:59%"></div></div><span class="fi-val">.200</span></div>
+          <div class="fi-row"><span class="fi-label">Onafhankelijk rapport</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:58%"></div></div><span class="fi-val">.196</span></div>
+          <div class="fi-row"><span class="fi-label">Jur: AVG</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:49%"></div></div><span class="fi-val">.165</span></div>
+        </div>
+        <div class="fi-legend">
+          <span class="fi-legend-item"><span class="fi-dot fi-consumer"></span>Pro consument</span>
+          <span class="fi-legend-item"><span class="fi-dot fi-insurer"></span>Pro verzekeraar</span>
+        </div>
+      </div>
+
+      <!-- Dataset verdeling -->
+      <div class="model-card model-card-wide">
+        <div class="model-card-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          <h3>Dataset verdeling</h3>
+        </div>
+        <p class="model-card-desc">Uitkomstverdeling per verzekeringstype. Gesorteerd op volume.</p>
+        <div class="ds-chart">
+          <div class="ds-row"><span class="ds-label">Auto <span class="ds-n">1.516</span></span><div class="ds-bar-wrap"><div class="ds-bar-seg ds-green" style="width:5.1%"></div><div class="ds-bar-seg ds-amber" style="width:8.3%"></div><div class="ds-bar-seg ds-red" style="width:86.6%"></div></div></div>
+          <div class="ds-row"><span class="ds-label">Leven <span class="ds-n">1.334</span></span><div class="ds-bar-wrap"><div class="ds-bar-seg ds-green" style="width:3.4%"></div><div class="ds-bar-seg ds-amber" style="width:6.8%"></div><div class="ds-bar-seg ds-red" style="width:89.8%"></div></div></div>
+          <div class="ds-row"><span class="ds-label">Rechtsbijstand <span class="ds-n">830</span></span><div class="ds-bar-wrap"><div class="ds-bar-seg ds-green" style="width:3.6%"></div><div class="ds-bar-seg ds-amber" style="width:8.2%"></div><div class="ds-bar-seg ds-red" style="width:88.2%"></div></div></div>
+          <div class="ds-row"><span class="ds-label">Arbeidsongesch. <span class="ds-n">471</span></span><div class="ds-bar-wrap"><div class="ds-bar-seg ds-green" style="width:5.5%"></div><div class="ds-bar-seg ds-amber" style="width:10.0%"></div><div class="ds-bar-seg ds-red" style="width:84.5%"></div></div></div>
+          <div class="ds-row"><span class="ds-label">Reis <span class="ds-n">430</span></span><div class="ds-bar-wrap"><div class="ds-bar-seg ds-green" style="width:4.0%"></div><div class="ds-bar-seg ds-amber" style="width:8.3%"></div><div class="ds-bar-seg ds-red" style="width:87.7%"></div></div></div>
+          <div class="ds-row"><span class="ds-label">Zorgplicht <span class="ds-n">402</span></span><div class="ds-bar-wrap"><div class="ds-bar-seg ds-green" style="width:4.2%"></div><div class="ds-bar-seg ds-amber" style="width:9.0%"></div><div class="ds-bar-seg ds-red" style="width:86.8%"></div></div></div>
+          <div class="ds-row"><span class="ds-label">Woonhuis <span class="ds-n">372</span></span><div class="ds-bar-wrap"><div class="ds-bar-seg ds-green" style="width:4.0%"></div><div class="ds-bar-seg ds-amber" style="width:7.8%"></div><div class="ds-bar-seg ds-red" style="width:88.2%"></div></div></div>
+          <div class="ds-row"><span class="ds-label">Inboedel <span class="ds-n">211</span></span><div class="ds-bar-wrap"><div class="ds-bar-seg ds-green" style="width:2.8%"></div><div class="ds-bar-seg ds-amber" style="width:6.7%"></div><div class="ds-bar-seg ds-red" style="width:90.5%"></div></div></div>
+        </div>
+        <div class="ds-legend">
+          <span><span class="ds-leg-dot ds-green"></span>Toegewezen</span>
+          <span><span class="ds-leg-dot ds-amber"></span>Deels toegewezen</span>
+          <span><span class="ds-leg-dot ds-red"></span>Afgewezen</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Model stats -->
+    <div class="model-stats">
+      <div class="model-stat-item">
+        <div class="model-stat-value">86.6%</div>
+        <div class="model-stat-label">Cross-validatie accuracy</div>
+      </div>
+      <div class="model-stat-item">
+        <div class="model-stat-value">5-fold</div>
+        <div class="model-stat-label">Stratified cross-validatie</div>
+      </div>
+      <div class="model-stat-item">
+        <div class="model-stat-value">899</div>
+        <div class="model-stat-label">Features (99 + 800 tekst)</div>
+      </div>
+      <div class="model-stat-item">
+        <div class="model-stat-value">41</div>
+        <div class="model-stat-label">Juridische termen</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Tool Section -->
 <section class="tool-section" id="tool-section">
   <div class="tool-header">
@@ -319,23 +465,39 @@
 
   <!-- TAB: Insights -->
   <div id="tab-insights" role="tabpanel" style="display:none;">
-    <div class="analysis-grid">
-      <div class="analysis-card" style="grid-column:span 2;">
-        <h3>Uitkomstverdeling per verzekeringstype</h3>
-        <div id="insightChart" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
-          <p style="color:var(--text-dim);font-size:14px;">Laad eerst data via het Data-tabblad.</p>
+    <div class="insights-layout">
+      <div class="insights-main">
+        <div class="analysis-card">
+          <div class="analysis-card-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <h3>Uitkomstverdeling per verzekeringstype</h3>
+          </div>
+          <p class="analysis-card-desc">Stacked bars tonen de verhouding tussen toegewezen, deels en afgewezen per type.</p>
+          <div id="insightChart" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
+            <p style="color:var(--text-dim);font-size:14px;">Laad eerst data via het Data-tabblad.</p>
+          </div>
         </div>
       </div>
-      <div class="analysis-card">
-        <h3>Sterkste voorspellers</h3>
-        <div id="insightPredictors">
-          <p style="color:var(--text-dim);font-size:14px;">Beschikbaar na laden data.</p>
+      <div class="insights-sidebar">
+        <div class="analysis-card">
+          <div class="analysis-card-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <h3>Sterkste voorspellers</h3>
+          </div>
+          <p class="analysis-card-desc">Kerngeschillen met het hoogste afwijzingspercentage.</p>
+          <div id="insightPredictors">
+            <p style="color:var(--text-dim);font-size:14px;">Beschikbaar na laden data.</p>
+          </div>
         </div>
-      </div>
-      <div class="analysis-card">
-        <h3>Risicofactoren</h3>
-        <div id="insightRisks">
-          <p style="color:var(--text-dim);font-size:14px;">Beschikbaar na laden data.</p>
+        <div class="analysis-card">
+          <div class="analysis-card-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <h3>Risicofactoren</h3>
+          </div>
+          <p class="analysis-card-desc">Factoren die de kans op toewijzing verhogen.</p>
+          <div id="insightRisks">
+            <p style="color:var(--text-dim);font-size:14px;">Beschikbaar na laden data.</p>
+          </div>
         </div>
       </div>
     </div>

@@ -1166,77 +1166,89 @@ function renderResults(result, input) {
 function updateInsights() {
   if (uitspraken.length === 0) return;
 
-  var types = [];
-  uitspraken.forEach(function(u) { if (types.indexOf(u.type_verzekering) === -1) types.push(u.type_verzekering); });
+  // ── Uitkomstverdeling per type (gesorteerd op volume) ──
+  var typeCounts = {};
+  uitspraken.forEach(function(u) {
+    var t = u.type_verzekering || 'overig';
+    if (!typeCounts[t]) typeCounts[t] = { total: 0, toegewezen: 0, deels: 0, afgewezen: 0 };
+    typeCounts[t].total++;
+    typeCounts[t][u.uitkomst || 'afgewezen']++;
+  });
 
-  var chartHTML = types.map(function(type) {
-    var m = uitspraken.filter(function(u) { return u.type_verzekering === type; });
-    var t = m.filter(function(u) { return u.uitkomst === 'toegewezen'; }).length;
-    var d = m.filter(function(u) { return u.uitkomst === 'deels'; }).length;
-    var a = m.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length;
-    var tot = m.length;
-    return '<div style="margin-bottom:16px;">' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:6px;">' +
-        '<span style="font-size:13px;font-weight:600;">' + type + '</span>' +
-        '<span style="font-size:12px;color:var(--text-dim);font-variant-numeric:tabular-nums;">' + tot + 'x</span>' +
-      '</div>' +
-      '<div style="display:flex;height:20px;border-radius:6px;overflow:hidden;background:var(--bg-alt);">' +
-        '<div style="width:' + (t/tot*100) + '%;background:var(--green);transition:width 0.8s ease;"></div>' +
-        '<div style="width:' + (d/tot*100) + '%;background:var(--amber);transition:width 0.8s ease;"></div>' +
-        '<div style="width:' + (a/tot*100) + '%;background:var(--red);opacity:0.8;transition:width 0.8s ease;"></div>' +
+  var sortedTypes = Object.keys(typeCounts).sort(function(a, b) { return typeCounts[b].total - typeCounts[a].total; });
+
+  var chartHTML = '<div class="ds-chart">' + sortedTypes.map(function(type) {
+    var c = typeCounts[type];
+    var tPct = (c.toegewezen / c.total * 100).toFixed(1);
+    var dPct = (c.deels / c.total * 100).toFixed(1);
+    var aPct = (c.afgewezen / c.total * 100).toFixed(1);
+    return '<div class="ds-row">' +
+      '<span class="ds-label">' + type + ' <span class="ds-n">' + c.total + '</span></span>' +
+      '<div class="ds-bar-wrap">' +
+        '<div class="ds-bar-seg ds-green" style="width:' + tPct + '%" title="Toegewezen: ' + tPct + '%"></div>' +
+        '<div class="ds-bar-seg ds-amber" style="width:' + dPct + '%" title="Deels: ' + dPct + '%"></div>' +
+        '<div class="ds-bar-seg ds-red" style="width:' + aPct + '%" title="Afgewezen: ' + aPct + '%"></div>' +
       '</div></div>';
-  }).join('');
+  }).join('') + '</div>' +
+  '<div class="ds-legend">' +
+    '<span><span class="ds-leg-dot ds-green"></span>Toegewezen</span>' +
+    '<span><span class="ds-leg-dot ds-amber"></span>Deels</span>' +
+    '<span><span class="ds-leg-dot ds-red"></span>Afgewezen</span>' +
+  '</div>';
 
-  document.getElementById('insightChart').innerHTML = chartHTML +
-    '<div style="display:flex;gap:24px;margin-top:16px;font-size:12px;color:var(--text-dim);font-weight:500;">' +
-      '<span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;background:var(--green);border-radius:3px;"></span>Toegewezen</span>' +
-      '<span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;background:var(--amber);border-radius:3px;"></span>Deels</span>' +
-      '<span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;background:var(--red);opacity:0.8;border-radius:3px;"></span>Afgewezen</span>' +
-    '</div>';
+  document.getElementById('insightChart').innerHTML = chartHTML;
 
-  var disputes = [];
-  uitspraken.forEach(function(u) { if (u.kerngeschil && disputes.indexOf(u.kerngeschil) === -1) disputes.push(u.kerngeschil); });
-  var dStats = disputes.map(function(d) {
-    var m = uitspraken.filter(function(u) { return u.kerngeschil === d; });
-    var a = m.filter(function(u) { return u.uitkomst === 'afgewezen'; }).length;
-    return { name: d, count: m.length, pct: Math.round(a / m.length * 100) };
-  }).filter(function(d) { return d.count >= 2; }).sort(function(a, b) { return b.pct - a.pct; });
+  // ── Sterkste voorspellers (per kerngeschil) ──
+  var disputes = {};
+  uitspraken.forEach(function(u) {
+    var kg = u.kerngeschil || 'overig';
+    if (!disputes[kg]) disputes[kg] = { total: 0, afgewezen: 0 };
+    disputes[kg].total++;
+    if (u.uitkomst === 'afgewezen') disputes[kg].afgewezen++;
+  });
+
+  var dStats = Object.keys(disputes).map(function(d) {
+    return { name: d, count: disputes[d].total, pct: Math.round(disputes[d].afgewezen / disputes[d].total * 100) };
+  }).filter(function(d) { return d.count >= 5; }).sort(function(a, b) { return b.pct - a.pct; });
 
   document.getElementById('insightPredictors').innerHTML =
     '<ul class="factor-list">' +
-    dStats.slice(0, 5).map(function(d) {
-      return '<li><span>' + d.name + ' (n=' + d.count + ')</span><span class="factor-tag ' + (d.pct > 60 ? 'pro' : d.pct < 40 ? 'con' : 'neutral') + '">' + d.pct + '% afw.</span></li>';
+    dStats.slice(0, 6).map(function(d) {
+      return '<li><span>' + d.name.replace(/_/g, ' ') + ' <span style="color:var(--text-dim);font-size:11px;">(n=' + d.count + ')</span></span><span class="factor-tag ' + (d.pct > 85 ? 'pro' : d.pct < 80 ? 'con' : 'neutral') + '">' + d.pct + '%</span></li>';
     }).join('') +
-    '</ul><p style="font-size:12px;color:var(--text-dim);margin-top:12px;">' + uitspraken.length + ' uitspraken</p>';
+    '</ul>' +
+    '<p style="font-size:11px;color:var(--text-dim);margin-top:12px;padding-top:10px;border-top:1px solid var(--border-subtle);">Afwijzingspercentage per geschiltype. Gebaseerd op ' + uitspraken.length + ' uitspraken.</p>';
 
+  // ── Risicofactoren ──
   var mBf = uitspraken.filter(function(u) { return u.beslisfactoren; });
   var risks = [];
   if (mBf.length > 0) {
-    var onduidelijk = mBf.filter(function(u) { return u.beslisfactoren.polisvoorwaarden_duidelijk === false; });
-    var ondT = onduidelijk.filter(function(u) { return u.uitkomst === 'toegewezen' || u.uitkomst === 'deels'; }).length;
-    if (onduidelijk.length > 0) risks.push({ name: 'Onduidelijke voorwaarden', pct: Math.round(ondT/onduidelijk.length*100), n: onduidelijk.length });
+    var riskTests = [
+      { name: 'Onduidelijke polisvoorwaarden', filter: function(u) { return u.beslisfactoren.polisvoorwaarden_duidelijk === false; } },
+      { name: 'Informatieplicht geschonden', filter: function(u) { return u.beslisfactoren.verzekeraar_informatieplicht_geschonden === true; } },
+      { name: 'Geen coulance aangeboden', filter: function(u) { return u.beslisfactoren.coulance_aangeboden === false; } },
+      { name: 'Sterk bewijs consument', filter: function(u) { return u.beslisfactoren.bewijs_consument === 'sterk'; } },
+      { name: 'Consument nalatig', filter: function(u) { return u.beslisfactoren.consument_nalatig === true; } },
+    ];
 
-    var info = mBf.filter(function(u) { return u.beslisfactoren.verzekeraar_informatieplicht_geschonden === true; });
-    var infoT = info.filter(function(u) { return u.uitkomst === 'toegewezen' || u.uitkomst === 'deels'; }).length;
-    if (info.length > 0) risks.push({ name: 'Informatieplicht geschonden', pct: Math.round(infoT/info.length*100), n: info.length });
-
-    var gc = mBf.filter(function(u) { return u.beslisfactoren.coulance_aangeboden === false; });
-    var gcT = gc.filter(function(u) { return u.uitkomst === 'toegewezen' || u.uitkomst === 'deels'; }).length;
-    if (gc.length > 0) risks.push({ name: 'Geen coulance', pct: Math.round(gcT/gc.length*100), n: gc.length });
-
-    var sb = mBf.filter(function(u) { return u.beslisfactoren.bewijs_consument === 'sterk'; });
-    var sbT = sb.filter(function(u) { return u.uitkomst === 'toegewezen' || u.uitkomst === 'deels'; }).length;
-    if (sb.length > 0) risks.push({ name: 'Sterk bewijs consument', pct: Math.round(sbT/sb.length*100), n: sb.length });
+    riskTests.forEach(function(test) {
+      var subset = mBf.filter(test.filter);
+      if (subset.length >= 5) {
+        var toewijzing = subset.filter(function(u) { return u.uitkomst === 'toegewezen' || u.uitkomst === 'deels'; }).length;
+        risks.push({ name: test.name, pct: Math.round(toewijzing / subset.length * 100), n: subset.length });
+      }
+    });
   }
 
   risks.sort(function(a, b) { return b.pct - a.pct; });
   document.getElementById('insightRisks').innerHTML = risks.length > 0 ?
     '<ul class="factor-list">' +
     risks.map(function(r) {
-      return '<li><span>' + r.name + ' (n=' + r.n + ')</span><span class="factor-tag ' + (r.pct > 60 ? 'con' : r.pct > 40 ? 'neutral' : 'pro') + '">' + r.pct + '% toeg.</span></li>';
+      return '<li><span>' + r.name + ' <span style="color:var(--text-dim);font-size:11px;">(n=' + r.n + ')</span></span><span class="factor-tag ' + (r.pct > 20 ? 'con' : r.pct > 10 ? 'neutral' : 'pro') + '">' + r.pct + '%</span></li>';
     }).join('') +
-    '</ul><p style="font-size:12px;color:var(--text-dim);margin-top:12px;">% toewijzing bij aanwezigheid factor</p>' :
-    '<p style="font-size:14px;color:var(--text-dim);">Onvoldoende data.</p>';
+    '</ul>' +
+    '<p style="font-size:11px;color:var(--text-dim);margin-top:12px;padding-top:10px;border-top:1px solid var(--border-subtle);">% (gedeeltelijke) toewijzing bij aanwezigheid van deze factor.</p>' :
+    '<p style="font-size:14px;color:var(--text-dim);">Onvoldoende data voor risicofactoren.</p>';
 }
 
 // ── KIFID Lookup ──
