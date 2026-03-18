@@ -1379,7 +1379,7 @@ function renderResults(result, input) {
       '</div>' +
       '<p class="report-card-desc">Gesorteerd op relevantie. Klik op een uitspraak om de volledige tekst te bekijken op kifid.nl.</p>' +
       sim.map(function(c) {
-        var kifidUrl = c.pdfUrl || ('https://www.kifid.nl/kifid-kennis-en-uitspraken/uitspraken/?SearchTerm=' + encodeURIComponent('uitspraak-' + c.nr));
+        var kifidUrl = c.pdfUrl || ('https://www.kifid.nl/kifid-kennis-en-uitspraken/uitspraken/?SearchTerm=' + encodeURIComponent(c.nr));
         var grondslagHtml = c.grondslag ? '<span class="case-grondslag" style="font-size:11px;color:var(--text-dim);display:block;margin-top:2px;">' + c.grondslag + '</span>' : '';
         return '<a href="' + kifidUrl + '" target="_blank" rel="noopener" class="case-row case-row-link"><span class="case-nr">' + c.nr + '</span><span class="case-desc">' + c.desc + grondslagHtml + '</span><span class="case-outcome ' + c.outcome + '">' + c.outcome + '</span><span class="case-relevance">' + c.relevance + ' <svg style="width:14px;height:14px;vertical-align:middle;opacity:0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span></a>';
       }).join('') + '</div>';
@@ -1498,10 +1498,11 @@ function lookupKifid() {
 
   var local = uitspraken.find(function(u) { return u.uitspraaknr === nr; });
   if (local) {
+    var lookupUrl = local.bron_url || ('https://www.kifid.nl/kifid-kennis-en-uitspraken/uitspraken/?SearchTerm=' + encodeURIComponent(nr));
     el.innerHTML =
       '<div style="padding:16px 20px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--radius);margin-top:12px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
-          '<span style="font-size:14px;font-weight:700;">' + local.uitspraaknr + '</span>' +
+          '<a href="' + lookupUrl + '" target="_blank" rel="noopener" style="font-size:14px;font-weight:700;color:var(--primary);">' + local.uitspraaknr + ' \u2197</a>' +
           '<span class="case-outcome ' + local.uitkomst + '">' + local.uitkomst + '</span>' +
         '</div>' +
         '<p style="font-size:14px;color:var(--text-muted);line-height:1.7;">' + local.samenvatting + '</p>' +
@@ -1513,7 +1514,7 @@ function lookupKifid() {
   } else {
     el.innerHTML =
       '<div style="padding:16px 20px;background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius);margin-top:12px;">' +
-        '<p style="font-size:14px;color:var(--text-muted);">Niet gevonden in lokale data (' + uitspraken.length + ' uitspraken). <a href="https://www.kifid.nl/kifid-kennis-en-uitspraken/uitspraken/?SearchTerm=' + encodeURIComponent('uitspraak-' + nr) + '" target="_blank" style="color:var(--primary);">Zoek op kifid.nl</a></p>' +
+        '<p style="font-size:14px;color:var(--text-muted);">Niet gevonden in lokale data (' + uitspraken.length + ' uitspraken). <a href="https://www.kifid.nl/kifid-kennis-en-uitspraken/uitspraken/?SearchTerm=' + encodeURIComponent(nr) + '" target="_blank" style="color:var(--primary);">Zoek op kifid.nl</a></p>' +
       '</div>';
   }
 }
