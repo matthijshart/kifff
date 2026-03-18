@@ -335,21 +335,241 @@ function updateThemeIcons(isDark) {
   if (moon) moon.style.display = isDark ? 'block' : 'none';
 }
 
-// ── Language Toggle ──
-function toggleLang() {
-  var currentLang = document.documentElement.getAttribute('data-lang') || 'nl';
-  var newLang = currentLang === 'nl' ? 'en' : 'nl';
-  document.documentElement.setAttribute('data-lang', newLang);
-  localStorage.setItem('lang', newLang);
+// ── Language Toggle / i18n ──
+var I18N = {
+  en: {
+    // Nav
+    nav_benefits: 'Benefits', nav_risk: 'Risk Assessment', nav_insights: 'Insights',
+    nav_cta: 'Start analysis',
+    // Hero
+    hero_title: 'Predict KIFID rulings with <span class="gradient" data-i18n="hero_gradient">data-driven precision</span>',
+    hero_gradient: 'data-driven precision',
+    hero_sub: 'Save litigation costs by knowing in advance how KIFID will rule. Compare with historical rulings and receive an evidence-based recommendation instantly.',
+    hero_cta_html: 'Free analysis <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+    hero_cta2: 'View benefits',
+    // Metrics
+    metric_analyzed: 'Analyzed rulings', metric_consumer: 'Consumer wins',
+    metric_insurer: 'Insurer wins', metric_home: 'Home insurance',
+    // Benefits
+    benefits_eyebrow: 'Why insurers use this', benefits_title: 'Faster, sharper, better substantiated',
+    benefits_desc: 'From reactive and intuitive to proactive and data-driven. Risk management and reputation protection, not just time savings.',
+    benefit1_title: 'Faster complaint assessment', benefit1_desc: 'Find comparable KIFID rulings and relevant arguments within seconds.',
+    benefit2_title: 'Lower legal costs', benefit2_desc: 'Prevent unnecessary proceedings by foreseeing how KIFID will likely rule.',
+    benefit3_title: 'Better risk assessment', benefit3_desc: 'See the probability of a consumer winning based on prior rulings.',
+    benefit4_title: 'Consistent decision-making', benefit4_desc: 'Decisions based on case law rather than individual interpretation.',
+    benefit5_title: 'Better policy terms', benefit5_desc: 'Analysis of rulings reveals which clauses frequently lead to disputes.',
+    // How it works
+    how_eyebrow: 'How it works', how_title: '4 steps to an evidence-based recommendation',
+    step1_title: 'Enter case details', step1_desc: 'Insurance type, core dispute, evidence position and other relevant details.',
+    step2_title: 'Upload policy terms', step2_desc: 'Optional: let AI scan the terms for high-risk clauses.',
+    step3_title: 'AI analyzes', step3_desc: 'The model compares your case with 5,922 historical KIFID rulings and trained patterns.',
+    step4_title: 'Receive recommendation', step4_desc: 'Pay out or hold, with decision factors and confidence score.',
+    // Model
+    model_eyebrow: 'The model', model_title: 'Trained on 5,922 KIFID rulings',
+    model_desc: 'An ensemble of three machine learning models, validated with 5-fold cross-validation.',
+    arch_input: 'Case features', arch_input_sub: '99 features + text',
+    arch_lr_sub: 'Structured features', arch_nb_sub: 'TF-IDF text', arch_tfidf_sub: 'Cosine distance',
+    arch_output: 'Risk assessment', arch_output_sub: 'Weighted ensemble',
+    trend_title: 'Rejection trend', trend_desc: 'Rejection rate per year. Declining trend: consumers win (partially) more often.',
+    fi_title: 'Strongest predictors', fi_desc: 'Top features from the Logistic Regression model, ranked by weight.',
+    fi_negligent: 'Consumer negligent', fi_neg_evidence: 'Negligence × evidence', fi_year: 'Year (trend)',
+    fi_complaint: 'Legal: complaint duty', fi_life: 'Life insurance', fi_limitation: 'Legal: limitation period',
+    fi_report: 'Independent report', fi_gdpr: 'Legal: GDPR',
+    fi_pro_consumer: 'Pro consumer', fi_pro_insurer: 'Pro insurer',
+    stat_cv: 'Cross-validation accuracy', stat_fold: 'Stratified cross-validation',
+    stat_features: 'Features (99 + 800 text)', stat_legal: 'Legal terms',
+    // Tool section
+    tool_eyebrow: 'Risk Assessment', tool_title: 'Assess the risk.',
+    tool_desc: 'Enter the case details and receive an evidence-based risk assessment instantly.',
+    tab_predict: 'Risk Assessment', tab_data: 'Data', tab_insights: 'Insights',
+    panel_case: 'Case Details',
+    // Form labels
+    label_type: 'Insurance type', label_dispute: 'Core dispute', label_amount: 'Claimed amount',
+    label_binding: 'Binding advice?', label_evidence: 'Consumer evidence', label_expert: 'Expert report',
+    label_goodwill: 'Goodwill offer', label_context: 'Additional context', label_upload: 'Upload policy terms',
+    // Select options
+    opt_select_type: 'Select type', opt_auto: 'Car insurance', opt_home: 'Home insurance',
+    opt_contents: 'Contents insurance', opt_travel: 'Travel insurance', opt_liability: 'Liability insurance',
+    opt_legal: 'Legal expenses insurance', opt_life: 'Life insurance', opt_disability: 'Disability insurance',
+    opt_health: 'Health insurance', opt_investment: 'Investment insurance', opt_death: 'Term life insurance',
+    opt_building: 'Building insurance', opt_moped: 'Moped insurance', opt_fire: 'Fire insurance',
+    opt_transport: 'Transport insurance', opt_other: 'Other',
+    opt_select_dispute: 'Select dispute type', opt_coverage: 'Coverage denial',
+    opt_terms: 'Policy terms interpretation', opt_damage: 'Damage assessment / amount',
+    opt_premium: 'Premium dispute', opt_disclosure: 'Disclosure breach',
+    opt_cancel: 'Policy cancellation', opt_duty: 'Duty of care breach',
+    opt_info: 'Inadequate information', opt_exclusion: 'Exclusion clause invoked',
+    opt_delay: 'Processing delay', opt_fraud: 'Fraud', opt_defect: 'Inherent defect', opt_other2: 'Other',
+    opt_binding_yes: 'Yes, binding', opt_binding_no: 'No, non-binding',
+    opt_select_evidence: 'Select evidence strength',
+    opt_strong: 'Strong (photos, reports, witnesses)', opt_medium: 'Medium (own statement + some evidence)',
+    opt_weak: 'Weak (own statement only)',
+    opt_no_report: 'No report', opt_by_consumer: 'Submitted by consumer',
+    opt_by_insurer: 'Submitted by insurer', opt_both: 'Both parties',
+    opt_no_goodwill: 'No goodwill offered', opt_low_goodwill: 'Yes, low amount',
+    opt_fair_goodwill: 'Yes, fair amount',
+    placeholder_context: 'Optional: relevant details about the case...',
+    upload_click: 'Click to upload PDF', upload_scan: 'AI scans for high-risk clauses',
+    btn_predict: 'Analyze & Predict',
+    empty_state_html: 'Enter the case details and click <strong style="color:var(--text-muted);">Analyze & Predict</strong>',
+    // Data tab
+    panel_registry: 'KIFID Rulings Registry', data_analyzed: 'Analyzed rulings',
+    data_period: 'Period', data_public: 'Public', data_accessible: 'Freely accessible',
+    placeholder_lookup: 'Search by ruling number, e.g. 2024-1029', btn_lookup: 'Look up',
+    panel_dataset: 'Manage dataset', data_no_data: 'No data loaded yet.',
+    upload_files: 'Click to upload files', upload_formats: 'CSV or JSON files of KIFID rulings',
+    btn_load_full: 'Load full dataset', btn_demo: 'Demo data',
+    // Insights
+    insight_dist_title: 'Outcome distribution by insurance type',
+    insight_dist_desc: 'Stacked bars show the ratio of granted, partial and rejected per type.',
+    insight_load_first: 'Load data first via the Data tab.',
+    insight_predictors_title: 'Strongest predictors',
+    insight_predictors_desc: 'Core disputes with the highest rejection rate.',
+    insight_available: 'Available after loading data.',
+    insight_risk_title: 'Risk factors',
+    insight_risk_desc: 'Factors that increase the chance of (partial) granting.',
+    insight_available2: 'Available after loading data.',
+    // Trust
+    trust_no_data: 'No data stored', trust_indicative: 'Indicative model, not legal advice',
+    trust_public: 'Public KIFID data',
+    // Footer
+    footer_rulings: 'KIFID Rulings', footer_about: 'About KIFID'
+  },
+  nl: {
+    nav_benefits: 'Voordelen', nav_risk: 'Risico-inschatting', nav_insights: 'Inzichten',
+    nav_cta: 'Start analyse',
+    hero_title: 'Voorspel KIFID-uitspraken met <span class="gradient" data-i18n="hero_gradient">datagedreven precisie</span>',
+    hero_gradient: 'datagedreven precisie',
+    hero_sub: 'Bespaar proceskosten door vooraf te weten hoe KIFID oordeelt. Vergelijk met historische uitspraken en ontvang direct een onderbouwd advies.',
+    hero_cta_html: 'Gratis analyse starten <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+    hero_cta2: 'Bekijk voordelen',
+    metric_analyzed: 'Geanalyseerde uitspraken', metric_consumer: 'Consument krijgt gelijk',
+    metric_insurer: 'Verzekeraar krijgt gelijk', metric_home: 'Woonhuisverzekering',
+    benefits_eyebrow: 'Waarom verzekeraars dit gebruiken', benefits_title: 'Sneller, scherper en beter onderbouwd',
+    benefits_desc: 'Van reactief en intuitief naar proactief en datagedreven. Risicobeheersing en reputatiebescherming, niet alleen tijdsbesparing.',
+    benefit1_title: 'Snellere beoordeling van klachten', benefit1_desc: 'Vind binnen seconden vergelijkbare KiFiD-uitspraken en relevante argumenten.',
+    benefit2_title: 'Minder juridische kosten', benefit2_desc: 'Voorkom onnodige procedures door vooraf te zien hoe KiFiD waarschijnlijk zal oordelen.',
+    benefit3_title: 'Betere risicobeoordeling', benefit3_desc: 'Zie direct de kans dat een consument wint op basis van eerdere uitspraken.',
+    benefit4_title: 'Consistente besluitvorming', benefit4_desc: 'Beslissingen gebaseerd op jurisprudentie in plaats van individuele interpretatie.',
+    benefit5_title: 'Betere polisvoorwaarden', benefit5_desc: 'Analyse van uitspraken laat zien welke clausules vaak tot geschillen leiden.',
+    how_eyebrow: 'Hoe het werkt', how_title: 'In 4 stappen naar een onderbouwd advies',
+    step1_title: 'Casuskenmerken invullen', step1_desc: 'Type verzekering, kerngeschil, bewijspositie en overige relevante details.',
+    step2_title: 'Polisvoorwaarden uploaden', step2_desc: 'Optioneel: laat AI de voorwaarden scannen op risicovolle clausules.',
+    step3_title: 'AI analyseert', step3_desc: 'Het model vergelijkt uw casus met 5.922 historische KIFID-uitspraken en getrainde patronen.',
+    step4_title: 'Advies ontvangen', step4_desc: 'Uitkeren of afwachten, met beslisfactoren en betrouwbaarheidsscore.',
+    model_eyebrow: 'Het model', model_title: 'Getraind op 5.922 KIFID-uitspraken',
+    model_desc: 'Een ensemble van drie machine learning modellen, gevalideerd met 5-fold cross-validatie.',
+    arch_input: 'Casuskenmerken', arch_input_sub: '99 features + tekst',
+    arch_lr_sub: 'Gestructureerde features', arch_nb_sub: 'TF-IDF tekst', arch_tfidf_sub: 'Cosine afstand',
+    arch_output: 'Risico-inschatting', arch_output_sub: 'Gewogen ensemble',
+    trend_title: 'Afwijzingstrend', trend_desc: 'Afwijzingspercentage per jaar. Dalende trend: consumenten krijgen vaker (deels) gelijk.',
+    fi_title: 'Sterkste voorspellers', fi_desc: 'Top features uit het Logistic Regression model, gerangschikt op gewicht.',
+    fi_negligent: 'Consument nalatig', fi_neg_evidence: 'Nalatigheid \u00d7 bewijs', fi_year: 'Jaar (trend)',
+    fi_complaint: 'Jur: klachtplicht', fi_life: 'Overlijdensrisicoverz.', fi_limitation: 'Jur: verjaringstermijn',
+    fi_report: 'Onafhankelijk rapport', fi_gdpr: 'Jur: AVG',
+    fi_pro_consumer: 'Pro consument', fi_pro_insurer: 'Pro verzekeraar',
+    stat_cv: 'Cross-validatie accuracy', stat_fold: 'Stratified cross-validatie',
+    stat_features: 'Features (99 + 800 tekst)', stat_legal: 'Juridische termen',
+    tool_eyebrow: 'Risico-inschatting', tool_title: 'Schat het risico in.',
+    tool_desc: 'Voer de casuskenmerken in en ontvang direct een onderbouwde risico-inschatting.',
+    tab_predict: 'Risico-inschatting', tab_data: 'Data', tab_insights: 'Inzichten',
+    panel_case: 'Casuskenmerken',
+    label_type: 'Type verzekering', label_dispute: 'Kerngeschil', label_amount: 'Gevorderd bedrag',
+    label_binding: 'Bindend advies?', label_evidence: 'Bewijs consument', label_expert: 'Deskundigenrapport',
+    label_goodwill: 'Coulanceaanbod', label_context: 'Aanvullende context', label_upload: 'Polisvoorwaarden uploaden',
+    opt_select_type: 'Selecteer type', opt_auto: 'Autoverzekering', opt_home: 'Woonhuisverzekering',
+    opt_contents: 'Inboedelverzekering', opt_travel: 'Reisverzekering', opt_liability: 'Aansprakelijkheidsverzekering',
+    opt_legal: 'Rechtsbijstandverzekering', opt_life: 'Levensverzekering', opt_disability: 'Arbeidsongeschiktheidsverzekering',
+    opt_health: 'Zorgverzekering', opt_investment: 'Beleggingsverzekering', opt_death: 'Overlijdensrisicoverzekering',
+    opt_building: 'Opstalverzekering', opt_moped: 'Bromfietsverzekering', opt_fire: 'Brandverzekering',
+    opt_transport: 'Transportverzekering', opt_other: 'Overig',
+    opt_select_dispute: 'Selecteer geschiltype', opt_coverage: 'Dekkingsweigering',
+    opt_terms: 'Uitleg polisvoorwaarden', opt_damage: 'Schadevaststelling / schadehoogte',
+    opt_premium: 'Premiegeschil', opt_disclosure: 'Schending mededelingsplicht',
+    opt_cancel: 'Opzegging verzekering', opt_duty: 'Schending zorgplicht',
+    opt_info: 'Gebrekkige informatievoorziening', opt_exclusion: 'Beroep op uitsluiting/clausule',
+    opt_delay: 'Vertraging afhandeling', opt_fraud: 'Fraude', opt_defect: 'Eigen gebrek', opt_other2: 'Overig',
+    opt_binding_yes: 'Ja, bindend', opt_binding_no: 'Nee, niet-bindend',
+    opt_select_evidence: 'Selecteer bewijskracht',
+    opt_strong: 'Sterk (foto\'s, rapporten, getuigen)', opt_medium: 'Gemiddeld (eigen verklaring + enig bewijs)',
+    opt_weak: 'Zwak (alleen eigen verklaring)',
+    opt_no_report: 'Geen rapport', opt_by_consumer: 'Ingebracht door consument',
+    opt_by_insurer: 'Ingebracht door verzekeraar', opt_both: 'Beide partijen',
+    opt_no_goodwill: 'Geen coulance aangeboden', opt_low_goodwill: 'Ja, laag bedrag',
+    opt_fair_goodwill: 'Ja, redelijk bedrag',
+    placeholder_context: 'Optioneel: relevante details over de casus...',
+    upload_click: 'Klik om PDF te uploaden', upload_scan: 'AI scant op risicovolle clausules',
+    btn_predict: 'Analyseer & Voorspel',
+    empty_state_html: 'Vul de casuskenmerken in en klik op <strong style="color:var(--text-muted);">Analyseer & Voorspel</strong>',
+    panel_registry: 'KIFID Uitsprakenregister', data_analyzed: 'Geanalyseerde uitspraken',
+    data_period: 'Periode', data_public: 'Publiek', data_accessible: 'Vrij toegankelijk',
+    placeholder_lookup: 'Zoek op uitspraaknummer, bijv. 2024-1029', btn_lookup: 'Opzoeken',
+    panel_dataset: 'Dataset beheren', data_no_data: 'Nog geen data geladen.',
+    upload_files: 'Klik om bestanden te uploaden', upload_formats: 'CSV of JSON bestanden van KIFID-uitspraken',
+    btn_load_full: 'Volledige dataset laden', btn_demo: 'Demo-data',
+    insight_dist_title: 'Uitkomstverdeling per verzekeringstype',
+    insight_dist_desc: 'Stacked bars tonen de verhouding tussen toegewezen, deels en afgewezen per type.',
+    insight_load_first: 'Laad eerst data via het Data-tabblad.',
+    insight_predictors_title: 'Sterkste voorspellers',
+    insight_predictors_desc: 'Kerngeschillen met het hoogste afwijzingspercentage.',
+    insight_available: 'Beschikbaar na laden data.',
+    insight_risk_title: 'Risicofactoren',
+    insight_risk_desc: 'Factoren die de kans op toewijzing verhogen.',
+    insight_available2: 'Beschikbaar na laden data.',
+    trust_no_data: 'Geen data opgeslagen', trust_indicative: 'Indicatief model, geen juridisch advies',
+    trust_public: 'Openbare KIFID-data',
+    footer_rulings: 'KIFID Uitspraken', footer_about: 'Over KIFID'
+  }
+};
+
+function currentLang() {
+  return document.documentElement.getAttribute('data-lang') || 'nl';
+}
+
+function t(key) {
+  var lang = currentLang();
+  return (I18N[lang] && I18N[lang][key]) || (I18N.nl[key]) || key;
+}
+
+function applyLang(lang) {
+  document.documentElement.setAttribute('data-lang', lang);
+  document.documentElement.setAttribute('lang', lang);
+  localStorage.setItem('lang', lang);
   var btn = document.getElementById('langToggle');
-  if (btn) btn.querySelector('.lang-label').textContent = newLang === 'nl' ? 'EN' : 'NL';
+  if (btn) btn.querySelector('.lang-label').textContent = lang === 'nl' ? 'EN' : 'NL';
+
+  var dict = I18N[lang] || I18N.nl;
+
+  // Update all elements with data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    if (!dict[key]) return;
+    // Keys ending in _html contain HTML
+    if (key.endsWith('_html') || el.tagName === 'H1' || el.querySelector('span,svg,strong')) {
+      el.innerHTML = dict[key];
+    } else {
+      el.textContent = dict[key];
+    }
+  });
+
+  // Update placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n-placeholder');
+    if (dict[key]) el.placeholder = dict[key];
+  });
+
+  // Update page title
+  document.title = 'ClaimWise \u2014 ' + (lang === 'en' ? 'Assess the risk' : 'Schat het risico in');
+}
+
+function toggleLang() {
+  var lang = currentLang() === 'nl' ? 'en' : 'nl';
+  applyLang(lang);
 }
 
 function initLang() {
   var lang = localStorage.getItem('lang') || 'nl';
-  document.documentElement.setAttribute('data-lang', lang);
-  var btn = document.getElementById('langToggle');
-  if (btn) btn.querySelector('.lang-label').textContent = lang === 'nl' ? 'EN' : 'NL';
+  applyLang(lang);
 }
 
 // ── Count-up Animations ──

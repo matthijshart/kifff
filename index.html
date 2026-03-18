@@ -19,9 +19,9 @@
     <span class="nav-name">ClaimWise</span>
   </a>
   <div class="nav-links">
-    <button class="nav-link" onclick="scrollToSection('features')">Voordelen</button>
-    <button class="nav-link" onclick="scrollToSection('tool-section')">Risico-inschatting</button>
-    <button class="nav-link" onclick="switchTab('insights'); scrollToSection('tool-section');">Inzichten</button>
+    <button class="nav-link" onclick="scrollToSection('features')" data-i18n="nav_benefits">Voordelen</button>
+    <button class="nav-link" onclick="scrollToSection('tool-section')" data-i18n="nav_risk">Risico-inschatting</button>
+    <button class="nav-link" onclick="switchTab('insights'); scrollToSection('tool-section');" data-i18n="nav_insights">Inzichten</button>
     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Wissel thema" id="themeToggle">
       <svg id="iconSun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       <svg id="iconMoon" width="18" height="18" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -29,45 +29,41 @@
     <button class="lang-toggle" onclick="toggleLang()" aria-label="Switch language" id="langToggle">
       <span class="lang-label">EN</span>
     </button>
-    <button class="nav-cta" onclick="scrollToSection('tool-section')">Start analyse</button>
+    <button class="nav-cta" onclick="scrollToSection('tool-section')" data-i18n="nav_cta">Start analyse</button>
   </div>
 </nav>
 
 <!-- Hero -->
 <section class="hero">
   <div class="hero-inner">
-    <div class="hero-eyebrow">
-      <span class="eyebrow-dot"></span>
-      Getraind op 5.922 openbare KIFID-uitspraken
-    </div>
-    <h1>Voorspel KIFID-uitspraken met <span class="gradient">datagedreven precisie</span></h1>
-    <p class="hero-sub">
+    <h1 data-i18n="hero_title">Voorspel KIFID-uitspraken met <span class="gradient" data-i18n="hero_gradient">datagedreven precisie</span></h1>
+    <p class="hero-sub" data-i18n="hero_sub">
       Bespaar proceskosten door vooraf te weten hoe KIFID oordeelt.
       Vergelijk met historische uitspraken en ontvang direct een onderbouwd advies.
     </p>
     <div class="hero-actions">
-      <button class="btn-primary" onclick="scrollToSection('tool-section')">
+      <button class="btn-primary" onclick="scrollToSection('tool-section')" data-i18n="hero_cta_html">
         Gratis analyse starten
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
-      <button class="btn-ghost" onclick="scrollToSection('features')">Bekijk voordelen</button>
+      <button class="btn-ghost" onclick="scrollToSection('features')" data-i18n="hero_cta2">Bekijk voordelen</button>
     </div>
     <div class="hero-metrics">
       <div class="metric">
         <div class="metric-value" data-count="5922" data-suffix="+">0</div>
-        <div class="metric-label">Geanalyseerde uitspraken</div>
+        <div class="metric-label" data-i18n="metric_analyzed">Geanalyseerde uitspraken</div>
       </div>
       <div class="metric">
         <div class="metric-value" id="heroStatConsumer" data-count="12" data-suffix="%">0</div>
-        <div class="metric-label">Consument krijgt gelijk</div>
+        <div class="metric-label" data-i18n="metric_consumer">Consument krijgt gelijk</div>
       </div>
       <div class="metric">
         <div class="metric-value" id="heroStatInsurer" data-count="88" data-suffix="%">0</div>
-        <div class="metric-label">Verzekeraar krijgt gelijk</div>
+        <div class="metric-label" data-i18n="metric_insurer">Verzekeraar krijgt gelijk</div>
       </div>
       <div class="metric">
         <div class="metric-value" data-count="372" data-suffix="">0</div>
-        <div class="metric-label">Woonhuisverzekering</div>
+        <div class="metric-label" data-i18n="metric_home">Woonhuisverzekering</div>
       </div>
     </div>
   </div>
@@ -75,44 +71,44 @@
 
 <!-- Benefits -->
 <section class="benefits" id="features">
-  <div class="section-eyebrow">Waarom verzekeraars dit gebruiken</div>
-  <h2 class="section-title">Sneller, scherper en beter onderbouwd</h2>
-  <p class="section-desc">Van reactief en intuitief naar proactief en datagedreven. Risicobeheersing en reputatiebescherming, niet alleen tijdsbesparing.</p>
+  <div class="section-eyebrow" data-i18n="benefits_eyebrow">Waarom verzekeraars dit gebruiken</div>
+  <h2 class="section-title" data-i18n="benefits_title">Sneller, scherper en beter onderbouwd</h2>
+  <p class="section-desc" data-i18n="benefits_desc">Van reactief en intuitief naar proactief en datagedreven. Risicobeheersing en reputatiebescherming, niet alleen tijdsbesparing.</p>
   <div class="benefits-grid">
     <div class="benefit-card">
       <div class="benefit-icon indigo">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </div>
-      <h3>Snellere beoordeling van klachten</h3>
-      <p>Vind binnen seconden vergelijkbare KiFiD-uitspraken en relevante argumenten.</p>
+      <h3 data-i18n="benefit1_title">Snellere beoordeling van klachten</h3>
+      <p data-i18n="benefit1_desc">Vind binnen seconden vergelijkbare KiFiD-uitspraken en relevante argumenten.</p>
     </div>
     <div class="benefit-card">
       <div class="benefit-icon emerald">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       </div>
-      <h3>Minder juridische kosten</h3>
-      <p>Voorkom onnodige procedures door vooraf te zien hoe KiFiD waarschijnlijk zal oordelen.</p>
+      <h3 data-i18n="benefit2_title">Minder juridische kosten</h3>
+      <p data-i18n="benefit2_desc">Voorkom onnodige procedures door vooraf te zien hoe KiFiD waarschijnlijk zal oordelen.</p>
     </div>
     <div class="benefit-card">
       <div class="benefit-icon amber">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       </div>
-      <h3>Betere risicobeoordeling</h3>
-      <p>Zie direct de kans dat een consument wint op basis van eerdere uitspraken.</p>
+      <h3 data-i18n="benefit3_title">Betere risicobeoordeling</h3>
+      <p data-i18n="benefit3_desc">Zie direct de kans dat een consument wint op basis van eerdere uitspraken.</p>
     </div>
     <div class="benefit-card">
       <div class="benefit-icon indigo">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       </div>
-      <h3>Consistente besluitvorming</h3>
-      <p>Beslissingen gebaseerd op jurisprudentie in plaats van individuele interpretatie.</p>
+      <h3 data-i18n="benefit4_title">Consistente besluitvorming</h3>
+      <p data-i18n="benefit4_desc">Beslissingen gebaseerd op jurisprudentie in plaats van individuele interpretatie.</p>
     </div>
     <div class="benefit-card">
       <div class="benefit-icon emerald">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       </div>
-      <h3>Betere polisvoorwaarden</h3>
-      <p>Analyse van uitspraken laat zien welke clausules vaak tot geschillen leiden.</p>
+      <h3 data-i18n="benefit5_title">Betere polisvoorwaarden</h3>
+      <p data-i18n="benefit5_desc">Analyse van uitspraken laat zien welke clausules vaak tot geschillen leiden.</p>
     </div>
   </div>
 </section>
@@ -121,29 +117,29 @@
 <section class="how-section">
   <div class="how-inner">
     <div style="text-align:center;">
-      <div class="section-eyebrow">Hoe het werkt</div>
-      <h2 class="section-title">In 4 stappen naar een onderbouwd advies</h2>
+      <div class="section-eyebrow" data-i18n="how_eyebrow">Hoe het werkt</div>
+      <h2 class="section-title" data-i18n="how_title">In 4 stappen naar een onderbouwd advies</h2>
     </div>
     <div class="steps-grid">
       <div class="step-card">
         <div class="step-num">1</div>
-        <h4>Casuskenmerken invullen</h4>
-        <p>Type verzekering, kerngeschil, bewijspositie en overige relevante details.</p>
+        <h4 data-i18n="step1_title">Casuskenmerken invullen</h4>
+        <p data-i18n="step1_desc">Type verzekering, kerngeschil, bewijspositie en overige relevante details.</p>
       </div>
       <div class="step-card">
         <div class="step-num">2</div>
-        <h4>Polisvoorwaarden uploaden</h4>
-        <p>Optioneel: laat AI de voorwaarden scannen op risicovolle clausules.</p>
+        <h4 data-i18n="step2_title">Polisvoorwaarden uploaden</h4>
+        <p data-i18n="step2_desc">Optioneel: laat AI de voorwaarden scannen op risicovolle clausules.</p>
       </div>
       <div class="step-card">
         <div class="step-num">3</div>
-        <h4>AI analyseert</h4>
-        <p>Het model vergelijkt uw casus met 5.922 historische KIFID-uitspraken en getrainde patronen.</p>
+        <h4 data-i18n="step3_title">AI analyseert</h4>
+        <p data-i18n="step3_desc">Het model vergelijkt uw casus met 5.922 historische KIFID-uitspraken en getrainde patronen.</p>
       </div>
       <div class="step-card">
         <div class="step-num">4</div>
-        <h4>Advies ontvangen</h4>
-        <p>Uitkeren of afwachten, met beslisfactoren en betrouwbaarheidsscore.</p>
+        <h4 data-i18n="step4_title">Advies ontvangen</h4>
+        <p data-i18n="step4_desc">Uitkeren of afwachten, met beslisfactoren en betrouwbaarheidsscore.</p>
       </div>
     </div>
   </div>
@@ -153,9 +149,9 @@
 <section class="model-section" id="model-insights">
   <div class="model-inner">
     <div style="text-align:center;">
-      <div class="section-eyebrow">Het model</div>
-      <h2 class="section-title">Getraind op 5.922 KIFID-uitspraken</h2>
-      <p class="section-desc" style="margin-left:auto;margin-right:auto;">Een ensemble van drie machine learning modellen, gevalideerd met 5-fold cross-validatie.</p>
+      <div class="section-eyebrow" data-i18n="model_eyebrow">Het model</div>
+      <h2 class="section-title" data-i18n="model_title">Getraind op 5.922 KIFID-uitspraken</h2>
+      <p class="section-desc" style="margin-left:auto;margin-right:auto;" data-i18n="model_desc">Een ensemble van drie machine learning modellen, gevalideerd met 5-fold cross-validatie.</p>
     </div>
 
     <!-- Model architecture -->
@@ -164,8 +160,8 @@
         <div class="model-arch-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
-        <div class="model-arch-label">Casuskenmerken</div>
-        <div class="model-arch-sub">99 features + tekst</div>
+        <div class="model-arch-label" data-i18n="arch_input">Casuskenmerken</div>
+        <div class="model-arch-sub" data-i18n="arch_input_sub">99 features + tekst</div>
       </div>
       <div class="model-arch-arrow">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -173,17 +169,17 @@
       <div class="model-arch-models">
         <div class="model-arch-node model-arch-model">
           <div class="model-arch-label">Logistic Regression</div>
-          <div class="model-arch-sub">Gestructureerde features</div>
+          <div class="model-arch-sub" data-i18n="arch_lr_sub">Gestructureerde features</div>
           <div class="model-arch-weight">25%</div>
         </div>
         <div class="model-arch-node model-arch-model">
           <div class="model-arch-label">Naive Bayes</div>
-          <div class="model-arch-sub">TF-IDF tekst</div>
+          <div class="model-arch-sub" data-i18n="arch_nb_sub">TF-IDF tekst</div>
           <div class="model-arch-weight">51%</div>
         </div>
         <div class="model-arch-node model-arch-model">
           <div class="model-arch-label">TF-IDF Similarity</div>
-          <div class="model-arch-sub">Cosine afstand</div>
+          <div class="model-arch-sub" data-i18n="arch_tfidf_sub">Cosine afstand</div>
           <div class="model-arch-weight">24%</div>
         </div>
       </div>
@@ -194,8 +190,8 @@
         <div class="model-arch-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
-        <div class="model-arch-label">Risico-inschatting</div>
-        <div class="model-arch-sub">Gewogen ensemble</div>
+        <div class="model-arch-label" data-i18n="arch_output">Risico-inschatting</div>
+        <div class="model-arch-sub" data-i18n="arch_output_sub">Gewogen ensemble</div>
       </div>
     </div>
 
@@ -204,9 +200,9 @@
       <div class="model-card">
         <div class="model-card-header">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          <h3>Afwijzingstrend</h3>
+          <h3 data-i18n="trend_title">Afwijzingstrend</h3>
         </div>
-        <p class="model-card-desc">Afwijzingspercentage per jaar. Dalende trend: consumenten krijgen vaker (deels) gelijk.</p>
+        <p class="model-card-desc" data-i18n="trend_desc">Afwijzingspercentage per jaar. Dalende trend: consumenten krijgen vaker (deels) gelijk.</p>
         <div class="trend-chart" id="trendChart">
           <div class="trend-y-axis">
             <span>95%</span><span>85%</span><span>75%</span>
@@ -229,22 +225,22 @@
       <div class="model-card">
         <div class="model-card-header">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          <h3>Sterkste voorspellers</h3>
+          <h3 data-i18n="fi_title">Sterkste voorspellers</h3>
         </div>
-        <p class="model-card-desc">Top features uit het Logistic Regression model, gerangschikt op gewicht.</p>
+        <p class="model-card-desc" data-i18n="fi_desc">Top features uit het Logistic Regression model, gerangschikt op gewicht.</p>
         <div class="fi-list">
-          <div class="fi-row"><span class="fi-label">Consument nalatig</span><div class="fi-bar-wrap"><div class="fi-bar fi-consumer" style="width:100%"></div></div><span class="fi-val">.339</span></div>
-          <div class="fi-row"><span class="fi-label">Nalatigheid × bewijs</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:95%"></div></div><span class="fi-val">.323</span></div>
-          <div class="fi-row"><span class="fi-label">Jaar (trend)</span><div class="fi-bar-wrap"><div class="fi-bar fi-consumer" style="width:74%"></div></div><span class="fi-val">.251</span></div>
-          <div class="fi-row"><span class="fi-label">Jur: klachtplicht</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:66%"></div></div><span class="fi-val">.223</span></div>
-          <div class="fi-row"><span class="fi-label">Overlijdensrisicoverz.</span><div class="fi-bar-wrap"><div class="fi-bar fi-consumer" style="width:63%"></div></div><span class="fi-val">.213</span></div>
-          <div class="fi-row"><span class="fi-label">Jur: verjaringstermijn</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:59%"></div></div><span class="fi-val">.200</span></div>
-          <div class="fi-row"><span class="fi-label">Onafhankelijk rapport</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:58%"></div></div><span class="fi-val">.196</span></div>
-          <div class="fi-row"><span class="fi-label">Jur: AVG</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:49%"></div></div><span class="fi-val">.165</span></div>
+          <div class="fi-row"><span class="fi-label" data-i18n="fi_negligent">Consument nalatig</span><div class="fi-bar-wrap"><div class="fi-bar fi-consumer" style="width:100%"></div></div><span class="fi-val">.339</span></div>
+          <div class="fi-row"><span class="fi-label" data-i18n="fi_neg_evidence">Nalatigheid × bewijs</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:95%"></div></div><span class="fi-val">.323</span></div>
+          <div class="fi-row"><span class="fi-label" data-i18n="fi_year">Jaar (trend)</span><div class="fi-bar-wrap"><div class="fi-bar fi-consumer" style="width:74%"></div></div><span class="fi-val">.251</span></div>
+          <div class="fi-row"><span class="fi-label" data-i18n="fi_complaint">Jur: klachtplicht</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:66%"></div></div><span class="fi-val">.223</span></div>
+          <div class="fi-row"><span class="fi-label" data-i18n="fi_life">Overlijdensrisicoverz.</span><div class="fi-bar-wrap"><div class="fi-bar fi-consumer" style="width:63%"></div></div><span class="fi-val">.213</span></div>
+          <div class="fi-row"><span class="fi-label" data-i18n="fi_limitation">Jur: verjaringstermijn</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:59%"></div></div><span class="fi-val">.200</span></div>
+          <div class="fi-row"><span class="fi-label" data-i18n="fi_report">Onafhankelijk rapport</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:58%"></div></div><span class="fi-val">.196</span></div>
+          <div class="fi-row"><span class="fi-label" data-i18n="fi_gdpr">Jur: AVG</span><div class="fi-bar-wrap"><div class="fi-bar fi-insurer" style="width:49%"></div></div><span class="fi-val">.165</span></div>
         </div>
         <div class="fi-legend">
-          <span class="fi-legend-item"><span class="fi-dot fi-consumer"></span>Pro consument</span>
-          <span class="fi-legend-item"><span class="fi-dot fi-insurer"></span>Pro verzekeraar</span>
+          <span class="fi-legend-item"><span class="fi-dot fi-consumer"></span><span data-i18n="fi_pro_consumer">Pro consument</span></span>
+          <span class="fi-legend-item"><span class="fi-dot fi-insurer"></span><span data-i18n="fi_pro_insurer">Pro verzekeraar</span></span>
         </div>
       </div>
 
@@ -254,19 +250,19 @@
     <div class="model-stats">
       <div class="model-stat-item">
         <div class="model-stat-value">86.6%</div>
-        <div class="model-stat-label">Cross-validatie accuracy</div>
+        <div class="model-stat-label" data-i18n="stat_cv">Cross-validatie accuracy</div>
       </div>
       <div class="model-stat-item">
         <div class="model-stat-value">5-fold</div>
-        <div class="model-stat-label">Stratified cross-validatie</div>
+        <div class="model-stat-label" data-i18n="stat_fold">Stratified cross-validatie</div>
       </div>
       <div class="model-stat-item">
         <div class="model-stat-value">899</div>
-        <div class="model-stat-label">Features (99 + 800 tekst)</div>
+        <div class="model-stat-label" data-i18n="stat_features">Features (99 + 800 tekst)</div>
       </div>
       <div class="model-stat-item">
         <div class="model-stat-value">41</div>
-        <div class="model-stat-label">Juridische termen</div>
+        <div class="model-stat-label" data-i18n="stat_legal">Juridische termen</div>
       </div>
     </div>
   </div>
@@ -275,119 +271,119 @@
 <!-- Tool Section -->
 <section class="tool-section" id="tool-section">
   <div class="tool-header">
-    <div class="section-eyebrow">Risico-inschatting</div>
-    <h2 class="section-title">Schat het risico in.</h2>
-    <p class="section-desc">Voer de casuskenmerken in en ontvang direct een onderbouwde risico-inschatting.</p>
+    <div class="section-eyebrow" data-i18n="tool_eyebrow">Risico-inschatting</div>
+    <h2 class="section-title" data-i18n="tool_title">Schat het risico in.</h2>
+    <p class="section-desc" data-i18n="tool_desc">Voer de casuskenmerken in en ontvang direct een onderbouwde risico-inschatting.</p>
   </div>
 
   <nav class="tab-bar" role="tablist">
-    <button class="tab-btn active" role="tab" onclick="switchTab('predict')">Risico-inschatting</button>
-    <button class="tab-btn" role="tab" onclick="switchTab('data')">Data</button>
-    <button class="tab-btn" role="tab" onclick="switchTab('insights')">Inzichten</button>
+    <button class="tab-btn active" role="tab" onclick="switchTab('predict')" data-i18n="tab_predict">Risico-inschatting</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('data')" data-i18n="tab_data">Data</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('insights')" data-i18n="tab_insights">Inzichten</button>
   </nav>
 
   <!-- TAB: Predict -->
   <div id="tab-predict" class="main-grid" role="tabpanel">
     <div class="panel">
-      <div class="panel-title">Casuskenmerken</div>
+      <div class="panel-title" data-i18n="panel_case">Casuskenmerken</div>
       <div class="field">
-        <label>Type verzekering</label>
+        <label data-i18n="label_type">Type verzekering</label>
         <select id="insuranceType">
-          <option value="">Selecteer type</option>
-          <option value="autoverzekering">Autoverzekering</option>
-          <option value="woonhuisverzekering">Woonhuisverzekering</option>
-          <option value="inboedelverzekering">Inboedelverzekering</option>
-          <option value="reisverzekering">Reisverzekering</option>
-          <option value="aansprakelijkheidsverzekering">Aansprakelijkheidsverzekering</option>
-          <option value="rechtsbijstandverzekering">Rechtsbijstandverzekering</option>
-          <option value="levensverzekering">Levensverzekering</option>
-          <option value="arbeidsongeschiktheidsverzekering">Arbeidsongeschiktheidsverzekering</option>
-          <option value="zorgverzekering">Zorgverzekering</option>
-          <option value="beleggingsverzekering">Beleggingsverzekering</option>
-          <option value="overlijdensrisicoverzekering">Overlijdensrisicoverzekering</option>
-          <option value="opstalverzekering">Opstalverzekering</option>
-          <option value="bromfietsverzekering">Bromfietsverzekering</option>
-          <option value="brandverzekering">Brandverzekering</option>
-          <option value="transportverzekering">Transportverzekering</option>
-          <option value="overig">Overig</option>
+          <option value="" data-i18n="opt_select_type">Selecteer type</option>
+          <option value="autoverzekering" data-i18n="opt_auto">Autoverzekering</option>
+          <option value="woonhuisverzekering" data-i18n="opt_home">Woonhuisverzekering</option>
+          <option value="inboedelverzekering" data-i18n="opt_contents">Inboedelverzekering</option>
+          <option value="reisverzekering" data-i18n="opt_travel">Reisverzekering</option>
+          <option value="aansprakelijkheidsverzekering" data-i18n="opt_liability">Aansprakelijkheidsverzekering</option>
+          <option value="rechtsbijstandverzekering" data-i18n="opt_legal">Rechtsbijstandverzekering</option>
+          <option value="levensverzekering" data-i18n="opt_life">Levensverzekering</option>
+          <option value="arbeidsongeschiktheidsverzekering" data-i18n="opt_disability">Arbeidsongeschiktheidsverzekering</option>
+          <option value="zorgverzekering" data-i18n="opt_health">Zorgverzekering</option>
+          <option value="beleggingsverzekering" data-i18n="opt_investment">Beleggingsverzekering</option>
+          <option value="overlijdensrisicoverzekering" data-i18n="opt_death">Overlijdensrisicoverzekering</option>
+          <option value="opstalverzekering" data-i18n="opt_building">Opstalverzekering</option>
+          <option value="bromfietsverzekering" data-i18n="opt_moped">Bromfietsverzekering</option>
+          <option value="brandverzekering" data-i18n="opt_fire">Brandverzekering</option>
+          <option value="transportverzekering" data-i18n="opt_transport">Transportverzekering</option>
+          <option value="overig" data-i18n="opt_other">Overig</option>
         </select>
       </div>
       <div class="field">
-        <label>Kerngeschil</label>
+        <label data-i18n="label_dispute">Kerngeschil</label>
         <select id="coreDispute">
-          <option value="">Selecteer geschiltype</option>
-          <option value="dekkingsweigering">Dekkingsweigering</option>
-          <option value="uitleg_voorwaarden">Uitleg polisvoorwaarden</option>
-          <option value="schadevaststelling">Schadevaststelling / schadehoogte</option>
-          <option value="premiegeschil">Premiegeschil</option>
-          <option value="mededelingsplicht">Schending mededelingsplicht</option>
-          <option value="opzegging">Opzegging verzekering</option>
-          <option value="zorgplicht">Schending zorgplicht</option>
-          <option value="informatievoorziening">Gebrekkige informatievoorziening</option>
-          <option value="clausule">Beroep op uitsluiting/clausule</option>
-          <option value="vertraging">Vertraging afhandeling</option>
-          <option value="fraude">Fraude</option>
-          <option value="eigen_gebrek">Eigen gebrek</option>
-          <option value="overig">Overig</option>
+          <option value="" data-i18n="opt_select_dispute">Selecteer geschiltype</option>
+          <option value="dekkingsweigering" data-i18n="opt_coverage">Dekkingsweigering</option>
+          <option value="uitleg_voorwaarden" data-i18n="opt_terms">Uitleg polisvoorwaarden</option>
+          <option value="schadevaststelling" data-i18n="opt_damage">Schadevaststelling / schadehoogte</option>
+          <option value="premiegeschil" data-i18n="opt_premium">Premiegeschil</option>
+          <option value="mededelingsplicht" data-i18n="opt_disclosure">Schending mededelingsplicht</option>
+          <option value="opzegging" data-i18n="opt_cancel">Opzegging verzekering</option>
+          <option value="zorgplicht" data-i18n="opt_duty">Schending zorgplicht</option>
+          <option value="informatievoorziening" data-i18n="opt_info">Gebrekkige informatievoorziening</option>
+          <option value="clausule" data-i18n="opt_exclusion">Beroep op uitsluiting/clausule</option>
+          <option value="vertraging" data-i18n="opt_delay">Vertraging afhandeling</option>
+          <option value="fraude" data-i18n="opt_fraud">Fraude</option>
+          <option value="eigen_gebrek" data-i18n="opt_defect">Eigen gebrek</option>
+          <option value="overig" data-i18n="opt_other2">Overig</option>
         </select>
       </div>
       <div class="field-row">
         <div class="field">
-          <label>Gevorderd bedrag</label>
+          <label data-i18n="label_amount">Gevorderd bedrag</label>
           <input type="number" id="claimAmount" placeholder="&euro; 15.000">
         </div>
         <div class="field">
-          <label>Bindend advies?</label>
+          <label data-i18n="label_binding">Bindend advies?</label>
           <select id="bindingAdvice">
-            <option value="bindend">Ja, bindend</option>
-            <option value="niet-bindend">Nee, niet-bindend</option>
+            <option value="bindend" data-i18n="opt_binding_yes">Ja, bindend</option>
+            <option value="niet-bindend" data-i18n="opt_binding_no">Nee, niet-bindend</option>
           </select>
         </div>
       </div>
       <div class="field">
-        <label>Bewijs consument</label>
+        <label data-i18n="label_evidence">Bewijs consument</label>
         <select id="consumerEvidence">
-          <option value="">Selecteer bewijskracht</option>
-          <option value="sterk">Sterk (foto's, rapporten, getuigen)</option>
-          <option value="gemiddeld">Gemiddeld (eigen verklaring + enig bewijs)</option>
-          <option value="zwak">Zwak (alleen eigen verklaring)</option>
+          <option value="" data-i18n="opt_select_evidence">Selecteer bewijskracht</option>
+          <option value="sterk" data-i18n="opt_strong">Sterk (foto's, rapporten, getuigen)</option>
+          <option value="gemiddeld" data-i18n="opt_medium">Gemiddeld (eigen verklaring + enig bewijs)</option>
+          <option value="zwak" data-i18n="opt_weak">Zwak (alleen eigen verklaring)</option>
         </select>
       </div>
       <div class="field">
-        <label>Deskundigenrapport</label>
+        <label data-i18n="label_expert">Deskundigenrapport</label>
         <select id="expertReport">
-          <option value="geen">Geen rapport</option>
-          <option value="consument">Ingebracht door consument</option>
-          <option value="verzekeraar">Ingebracht door verzekeraar</option>
-          <option value="beide">Beide partijen</option>
+          <option value="geen" data-i18n="opt_no_report">Geen rapport</option>
+          <option value="consument" data-i18n="opt_by_consumer">Ingebracht door consument</option>
+          <option value="verzekeraar" data-i18n="opt_by_insurer">Ingebracht door verzekeraar</option>
+          <option value="beide" data-i18n="opt_both">Beide partijen</option>
         </select>
       </div>
       <div class="field">
-        <label>Coulanceaanbod</label>
+        <label data-i18n="label_goodwill">Coulanceaanbod</label>
         <select id="goodwillOffer">
-          <option value="nee">Geen coulance aangeboden</option>
-          <option value="ja_laag">Ja, laag bedrag</option>
-          <option value="ja_redelijk">Ja, redelijk bedrag</option>
+          <option value="nee" data-i18n="opt_no_goodwill">Geen coulance aangeboden</option>
+          <option value="ja_laag" data-i18n="opt_low_goodwill">Ja, laag bedrag</option>
+          <option value="ja_redelijk" data-i18n="opt_fair_goodwill">Ja, redelijk bedrag</option>
         </select>
       </div>
       <div class="field">
-        <label>Aanvullende context</label>
-        <textarea id="additionalContext" placeholder="Optioneel: relevante details over de casus..."></textarea>
+        <label data-i18n="label_context">Aanvullende context</label>
+        <textarea id="additionalContext" data-i18n-placeholder="placeholder_context" placeholder="Optioneel: relevante details over de casus..."></textarea>
       </div>
 
       <div class="field" style="border-top:1px solid var(--border-subtle);padding-top:22px;margin-top:10px;">
-        <label>Polisvoorwaarden uploaden</label>
+        <label data-i18n="label_upload">Polisvoorwaarden uploaden</label>
         <div id="policyUploadZone" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:22px;text-align:center;cursor:pointer;transition:all 0.2s ease;" onclick="document.getElementById('policyFileInput').click()">
           <p style="font-size:14px;color:var(--text-muted);margin:0;" id="policyUploadLabel">
-            <strong style="color:var(--text-secondary);">Klik om PDF te uploaden</strong><br>
-            <span style="font-size:12px;color:var(--text-dim);margin-top:4px;display:inline-block;">AI scant op risicovolle clausules</span>
+            <strong style="color:var(--text-secondary);" data-i18n="upload_click">Klik om PDF te uploaden</strong><br>
+            <span style="font-size:12px;color:var(--text-dim);margin-top:4px;display:inline-block;" data-i18n="upload_scan">AI scant op risicovolle clausules</span>
           </p>
         </div>
         <input type="file" id="policyFileInput" accept=".pdf" style="display:none" onchange="handlePolicyUpload(event)">
         <div id="policyAnalysisResult" style="margin-top:14px;"></div>
       </div>
 
-      <button class="btn-predict" id="btnPredict" onclick="runPrediction()">Analyseer &amp; Voorspel</button>
+      <button class="btn-predict" id="btnPredict" onclick="runPrediction()" data-i18n="btn_predict">Analyseer &amp; Voorspel</button>
     </div>
 
     <div class="results-area" id="resultsArea">
@@ -396,7 +392,7 @@
           <div class="empty-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
-          <p style="font-size:15px;color:var(--text-dim);">Vul de casuskenmerken in en klik op <strong style="color:var(--text-muted);">Analyseer &amp; Voorspel</strong></p>
+          <p style="font-size:15px;color:var(--text-dim);" data-i18n="empty_state_html">Vul de casuskenmerken in en klik op <strong style="color:var(--text-muted);">Analyseer &amp; Voorspel</strong></p>
         </div>
       </div>
     </div>
@@ -405,40 +401,40 @@
   <!-- TAB: Data -->
   <div id="tab-data" role="tabpanel" style="display:none;">
     <div class="panel" style="max-width:800px;margin:0 auto 24px;">
-      <div class="panel-title">KIFID Uitsprakenregister</div>
+      <div class="panel-title" data-i18n="panel_registry">KIFID Uitsprakenregister</div>
       <div class="data-stats-grid">
         <div class="data-stat">
           <div class="data-stat-value" data-count="5922" data-suffix="">0</div>
-          <div class="data-stat-label">Geanalyseerde uitspraken</div>
+          <div class="data-stat-label" data-i18n="data_analyzed">Geanalyseerde uitspraken</div>
         </div>
         <div class="data-stat">
           <div class="data-stat-value">2007 &ndash; nu</div>
-          <div class="data-stat-label">Periode</div>
+          <div class="data-stat-label" data-i18n="data_period">Periode</div>
         </div>
         <div class="data-stat">
-          <div class="data-stat-value">Publiek</div>
-          <div class="data-stat-label">Vrij toegankelijk</div>
+          <div class="data-stat-value" data-i18n="data_public">Publiek</div>
+          <div class="data-stat-label" data-i18n="data_accessible">Vrij toegankelijk</div>
         </div>
       </div>
       <div class="lookup-bar">
-        <input type="text" id="kifidLookup" placeholder="Zoek op uitspraaknummer, bijv. 2024-1029" style="flex:1;">
-        <button class="btn-predict" onclick="lookupKifid()" style="width:auto;margin-top:0;padding:11px 24px;">Opzoeken</button>
+        <input type="text" id="kifidLookup" data-i18n-placeholder="placeholder_lookup" placeholder="Zoek op uitspraaknummer, bijv. 2024-1029" style="flex:1;">
+        <button class="btn-predict" onclick="lookupKifid()" style="width:auto;margin-top:0;padding:11px 24px;" data-i18n="btn_lookup">Opzoeken</button>
       </div>
       <div id="kifidLookupResult"></div>
     </div>
     <div class="panel" style="max-width:800px;margin:0 auto;">
-      <div class="panel-title">Dataset beheren</div>
-      <div id="dataStatus" class="data-status empty">Nog geen data geladen.</div>
+      <div class="panel-title" data-i18n="panel_dataset">Dataset beheren</div>
+      <div id="dataStatus" class="data-status empty" data-i18n="data_no_data">Nog geen data geladen.</div>
       <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
         <svg width="32" height="32" style="color:var(--text-dim);opacity:0.3;margin-bottom:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <p><strong>Klik om bestanden te uploaden</strong></p>
-        <p class="formats">CSV of JSON bestanden van KIFID-uitspraken</p>
+        <p><strong data-i18n="upload_files">Klik om bestanden te uploaden</strong></p>
+        <p class="formats" data-i18n="upload_formats">CSV of JSON bestanden van KIFID-uitspraken</p>
       </div>
       <input type="file" id="fileInput" multiple accept=".csv,.json" style="display:none" onchange="handleFileUpload(event)">
       <div id="uploadedFiles" style="margin-top:20px;"></div>
       <div style="display:flex;gap:14px;margin-top:28px;padding-top:22px;border-top:1px solid var(--border-subtle);">
-        <button class="btn-predict" onclick="loadFullDataset()" style="flex:1;">Volledige dataset laden</button>
-        <button class="btn-predict" onclick="loadDemoData()" style="flex:1;background:var(--bg-alt);color:var(--text);border:1px solid var(--border);">Demo-data</button>
+        <button class="btn-predict" onclick="loadFullDataset()" style="flex:1;" data-i18n="btn_load_full">Volledige dataset laden</button>
+        <button class="btn-predict" onclick="loadDemoData()" style="flex:1;background:var(--bg-alt);color:var(--text);border:1px solid var(--border);" data-i18n="btn_demo">Demo-data</button>
       </div>
     </div>
   </div>
@@ -450,11 +446,11 @@
         <div class="analysis-card">
           <div class="analysis-card-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            <h3>Uitkomstverdeling per verzekeringstype</h3>
+            <h3 data-i18n="insight_dist_title">Uitkomstverdeling per verzekeringstype</h3>
           </div>
-          <p class="analysis-card-desc">Stacked bars tonen de verhouding tussen toegewezen, deels en afgewezen per type.</p>
+          <p class="analysis-card-desc" data-i18n="insight_dist_desc">Stacked bars tonen de verhouding tussen toegewezen, deels en afgewezen per type.</p>
           <div id="insightChart" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
-            <p style="color:var(--text-dim);font-size:14px;">Laad eerst data via het Data-tabblad.</p>
+            <p style="color:var(--text-dim);font-size:14px;" data-i18n="insight_load_first">Laad eerst data via het Data-tabblad.</p>
           </div>
         </div>
       </div>
@@ -462,21 +458,21 @@
         <div class="analysis-card">
           <div class="analysis-card-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            <h3>Sterkste voorspellers</h3>
+            <h3 data-i18n="insight_predictors_title">Sterkste voorspellers</h3>
           </div>
-          <p class="analysis-card-desc">Kerngeschillen met het hoogste afwijzingspercentage.</p>
+          <p class="analysis-card-desc" data-i18n="insight_predictors_desc">Kerngeschillen met het hoogste afwijzingspercentage.</p>
           <div id="insightPredictors">
-            <p style="color:var(--text-dim);font-size:14px;">Beschikbaar na laden data.</p>
+            <p style="color:var(--text-dim);font-size:14px;" data-i18n="insight_available">Beschikbaar na laden data.</p>
           </div>
         </div>
         <div class="analysis-card">
           <div class="analysis-card-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <h3>Risicofactoren</h3>
+            <h3 data-i18n="insight_risk_title">Risicofactoren</h3>
           </div>
-          <p class="analysis-card-desc">Factoren die de kans op toewijzing verhogen.</p>
+          <p class="analysis-card-desc" data-i18n="insight_risk_desc">Factoren die de kans op toewijzing verhogen.</p>
           <div id="insightRisks">
-            <p style="color:var(--text-dim);font-size:14px;">Beschikbaar na laden data.</p>
+            <p style="color:var(--text-dim);font-size:14px;" data-i18n="insight_available2">Beschikbaar na laden data.</p>
           </div>
         </div>
       </div>
@@ -489,15 +485,15 @@
   <div class="trust-inner">
     <div class="trust-item">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      <span>Geen data opgeslagen</span>
+      <span data-i18n="trust_no_data">Geen data opgeslagen</span>
     </div>
     <div class="trust-item">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      <span>Indicatief model, geen juridisch advies</span>
+      <span data-i18n="trust_indicative">Indicatief model, geen juridisch advies</span>
     </div>
     <div class="trust-item">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      <span>Openbare KIFID-data</span>
+      <span data-i18n="trust_public">Openbare KIFID-data</span>
     </div>
     <div class="trust-item">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
@@ -516,8 +512,8 @@
       <span class="footer-text">ClaimWise</span>
     </div>
     <div class="footer-links">
-      <a href="https://www.kifid.nl/uitspraken/" target="_blank" rel="noopener noreferrer">KIFID Uitspraken</a>
-      <a href="https://www.kifid.nl" target="_blank" rel="noopener noreferrer">Over KIFID</a>
+      <a href="https://www.kifid.nl/uitspraken/" target="_blank" rel="noopener noreferrer" data-i18n="footer_rulings">KIFID Uitspraken</a>
+      <a href="https://www.kifid.nl" target="_blank" rel="noopener noreferrer" data-i18n="footer_about">Over KIFID</a>
     </div>
   </div>
 </footer>
