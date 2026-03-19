@@ -929,12 +929,14 @@ function analyzeCase(input) {
   }
 
   // ── 6. Beslisfactoren: polisvoorwaarden duidelijkheid (model of runtime) ──
+  // Duidelijke voorwaarden → meer afwijzingen → pro (goed voor verzekeraar)
+  // Onduidelijke voorwaarden → minder afwijzingen → con (slecht voor verzekeraar)
   var pvdData = modelBfLookup(typeModel, 'polisvoorwaarden_duidelijk', 'true');
   var pvuData = modelBfLookup(typeModel, 'polisvoorwaarden_duidelijk', 'false');
   if (pvdData && pvuData) {
     var verschil = pvdData.afw_pct - pvuData.afw_pct;
     if (Math.abs(verschil) >= 5) {
-      factors.push({ label: 'Onduidelijke voorwaarden \u2192 ' + pvuData.afw_pct + '% afw. vs. duidelijk ' + pvdData.afw_pct + '% (n=' + pvuData.n + '/' + pvdData.n + ', model)', value: '\u0394' + Math.abs(Math.round(verschil)) + '%', type: verschil > 0 ? 'con' : 'pro' });
+      factors.push({ label: 'Onduidelijke voorwaarden \u2192 ' + pvuData.afw_pct + '% afw. vs. duidelijk ' + pvdData.afw_pct + '% (n=' + pvuData.n + '/' + pvdData.n + ', model)', value: '\u0394' + Math.abs(Math.round(verschil)) + '%', type: verschil > 0 ? 'pro' : 'con' });
     }
   } else if (bfAll.length >= 5) {
     var onduidelijk = bfAll.filter(function(u) { return u.beslisfactoren.polisvoorwaarden_duidelijk === false; });
@@ -944,7 +946,7 @@ function analyzeCase(input) {
       var duiRate = afwPct(duidelijk);
       var verschil2 = duiRate - ondRate;
       if (Math.abs(verschil2) >= 10) {
-        factors.push({ label: 'Onduidelijke voorwaarden \u2192 ' + ondRate + '% afw. vs. duidelijk ' + duiRate + '% (n=' + onduidelijk.length + '/' + duidelijk.length + ')', value: '\u0394' + Math.abs(verschil2) + '%', type: verschil2 > 0 ? 'con' : 'pro' });
+        factors.push({ label: 'Onduidelijke voorwaarden \u2192 ' + ondRate + '% afw. vs. duidelijk ' + duiRate + '% (n=' + onduidelijk.length + '/' + duidelijk.length + ')', value: '\u0394' + Math.abs(verschil2) + '%', type: verschil2 > 0 ? 'pro' : 'con' });
       }
     }
   }
