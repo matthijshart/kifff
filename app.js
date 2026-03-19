@@ -949,14 +949,15 @@ function analyzeCase(input) {
     }
   }
 
-  // ── 7. Beslisfactoren: consument nalatig (data-driven) ──
+  // ── 7. Beslisfactoren: consument nalatig (gunstig voor verzekeraar) ──
   if (bfAll.length >= 5) {
     var nalatig = bfAll.filter(function(u) { return u.beslisfactoren.consument_nalatig === true; });
     if (nalatig.length >= 3) {
       var nalRate = afwPct(nalatig);
       var nalDelta = Math.round((nalRate - overallAfwRate) * 0.25);
       if (Math.abs(nalDelta) >= 3) {
-        factors.push({ label: 'Nalatigheid consument \u2192 ' + nalRate + '% afw. (n=' + nalatig.length + ')', value: fmtDelta(nalDelta), type: 'neutral' });
+        score += nalDelta;
+        factors.push({ label: 'Nalatigheid consument \u2192 ' + nalRate + '% afw. (n=' + nalatig.length + ')', value: fmtDelta(nalDelta), type: nalDelta > 3 ? 'pro' : nalDelta < -3 ? 'con' : 'neutral' });
       }
     }
   }
