@@ -87,6 +87,7 @@ function ensembleBuildFeatureVector(input, textForInput) {
   features.push(bedrag > 50000 ? 1 : 0);
   features.push(bedrag > 100000 ? 1 : 0);
   features.push(bedrag > 0 && bedrag <= 5000 ? 1 : 0);
+  features.push(bedrag > 0 ? 1 : 0); // bedrag_bekend flag
 
   // 4. Bindend advies
   features.push(input.binding === 'bindend' ? 1 : 0);
@@ -284,6 +285,10 @@ function ensemblePredict(input) {
     wLr * lrProbsFull[2] + wNb * nbProbs[2] + wTfidf * tfidfProbs[2],
   ];
 
+  // Calibratie-boost: corrigeer voor class imbalance (minority classes boosten)
+  var calBoost = ens.calibration_boost || [1, 1, 1];
+  ensembleProbs = ensembleProbs.map(function(p, i) { return p * calBoost[i]; });
+
   // Normaliseer
   var ensSum = ensembleProbs.reduce(function(a, b) { return a + b; }, 0) || 1;
   ensembleProbs = ensembleProbs.map(function(p) { return p / ensSum; });
@@ -433,7 +438,38 @@ var I18N = {
     trust_no_data: 'No data stored', trust_indicative: 'Indicative model, not legal advice',
     trust_public: 'Public KIFID data',
     // Footer
-    footer_rulings: 'KIFID Rulings', footer_about: 'About KIFID'
+    footer_rulings: 'KIFID Rulings', footer_about: 'About KIFID',
+    // Insurer tab
+    nav_insurer: 'My Insurer', tab_insurer: 'My Insurer',
+    insurer_title: 'Insurer Analytics',
+    insurer_search_placeholder: 'Search for an insurer...',
+    insurer_select_prompt: 'Select an insurer',
+    insurer_select_desc: 'Search and select an insurer to view detailed analytics, benchmarks and risk areas.',
+    insurer_total_cases: 'Total cases',
+    insurer_rejection_rate: 'Rejection rate',
+    insurer_grant_rate: 'Grant rate',
+    insurer_partial_rate: 'Partial %',
+    insurer_vs_market: 'vs. market avg',
+    insurer_benchmark_title: 'Benchmark: rejection rate vs. market average',
+    insurer_this_insurer: 'This insurer',
+    insurer_market_avg: 'Market average',
+    insurer_type_breakdown: 'Breakdown by insurance type',
+    insurer_col_type: 'Type',
+    insurer_col_n: 'N',
+    insurer_col_rejected: 'Rej%',
+    insurer_col_granted: 'Grant%',
+    insurer_col_partial: 'Partial%',
+    insurer_top_disputes: 'Top dispute types',
+    insurer_trend_title: 'Trend over years',
+    insurer_risk_areas: 'Risk areas',
+    insurer_risk_desc: 'Areas where this insurer performs worse than market average',
+    insurer_no_risk: 'No risk areas identified - this insurer performs at or above market average.',
+    insurer_cases_period: 'Cases in period',
+    insurer_worse_than_avg: 'worse than avg',
+    insurer_better_than_avg: 'better than avg',
+    insurer_year: 'Year',
+    insurer_rej_pct: 'Rej%',
+    insurer_n_cases: 'N'
   },
   nl: {
     nav_benefits: 'Voordelen', nav_risk: 'Risico-inschatting', nav_insights: 'Inzichten',
@@ -518,7 +554,38 @@ var I18N = {
     insight_available2: 'Beschikbaar na laden data.',
     trust_no_data: 'Geen data opgeslagen', trust_indicative: 'Indicatief model, geen juridisch advies',
     trust_public: 'Openbare KIFID-data',
-    footer_rulings: 'KIFID Uitspraken', footer_about: 'Over KIFID'
+    footer_rulings: 'KIFID Uitspraken', footer_about: 'Over KIFID',
+    // Insurer tab
+    nav_insurer: 'Mijn Verzekeraar', tab_insurer: 'Mijn Verzekeraar',
+    insurer_title: 'Verzekeraar Analytics',
+    insurer_search_placeholder: 'Zoek een verzekeraar...',
+    insurer_select_prompt: 'Selecteer een verzekeraar',
+    insurer_select_desc: 'Zoek en selecteer een verzekeraar om gedetailleerde analyses, benchmarks en risicogebieden te bekijken.',
+    insurer_total_cases: 'Totaal zaken',
+    insurer_rejection_rate: 'Afwijzingspercentage',
+    insurer_grant_rate: 'Toewijzingspercentage',
+    insurer_partial_rate: 'Deels toegewezen %',
+    insurer_vs_market: 'vs. marktgemiddelde',
+    insurer_benchmark_title: 'Benchmark: afwijzingspercentage vs. marktgemiddelde',
+    insurer_this_insurer: 'Deze verzekeraar',
+    insurer_market_avg: 'Marktgemiddelde',
+    insurer_type_breakdown: 'Uitsplitsing per verzekeringstype',
+    insurer_col_type: 'Type',
+    insurer_col_n: 'N',
+    insurer_col_rejected: 'Afw%',
+    insurer_col_granted: 'Toeg%',
+    insurer_col_partial: 'Deels%',
+    insurer_top_disputes: 'Top geschiltypen',
+    insurer_trend_title: 'Trend over jaren',
+    insurer_risk_areas: 'Risicogebieden',
+    insurer_risk_desc: 'Gebieden waar deze verzekeraar slechter presteert dan het marktgemiddelde',
+    insurer_no_risk: 'Geen risicogebieden gevonden - deze verzekeraar presteert op of boven het marktgemiddelde.',
+    insurer_cases_period: 'Zaken in periode',
+    insurer_worse_than_avg: 'slechter dan gem.',
+    insurer_better_than_avg: 'beter dan gem.',
+    insurer_year: 'Jaar',
+    insurer_rej_pct: 'Afw%',
+    insurer_n_cases: 'N'
   }
 };
 
@@ -621,7 +688,7 @@ function scrollToSection(id) {
 // ── Tab Switching ──
 function switchTab(tab) {
   currentTab = tab;
-  var tabs = ['predict', 'data', 'insights'];
+  var tabs = ['predict', 'data', 'insights', 'insurer'];
   var btns = document.querySelectorAll('.tab-btn');
   btns.forEach(function(btn, i) {
     btn.classList.toggle('active', tabs[i] === tab);
@@ -629,6 +696,10 @@ function switchTab(tab) {
   document.getElementById('tab-predict').style.display = tab === 'predict' ? 'grid' : 'none';
   document.getElementById('tab-data').style.display = tab === 'data' ? 'block' : 'none';
   document.getElementById('tab-insights').style.display = tab === 'insights' ? 'block' : 'none';
+  document.getElementById('tab-insurer').style.display = tab === 'insurer' ? 'block' : 'none';
+  if (tab === 'insurer') {
+    initInsurerTab();
+  }
 }
 
 // ── Auto-load Dataset ──
@@ -1000,7 +1071,7 @@ function analyzeCase(input) {
   if (input.amount > 0) {
     var lo = input.amount * 0.3;
     var hi = input.amount * 3;
-    var amountPeers = uitspraken.filter(function(u) { var b = u.bedrag_gevorderd || 0; return b >= lo && b <= hi && b > 0; });
+    var amountPeers = uitspraken.filter(function(u) { var b = u.bedrag_gevorderd; return b && b >= lo && b <= hi; });
     if (amountPeers.length >= 5) {
       var amtRate = afwPct(amountPeers);
       var amtAdj = Math.round((amtRate - overallAfwRate) * 0.2);
@@ -1604,4 +1675,442 @@ function initDragDrop() {
     input.files = e.dataTransfer.files;
     handleFileUpload({ target: input });
   });
+}
+
+// ══════════════════════════════════════════════════════
+// ── Insurer Analytics Tab ──
+// ══════════════════════════════════════════════════════
+
+var VERZEKERAAR_GROUP_MAP = {
+  'asr': 'ASR',
+  'a.s.r.': 'ASR',
+  'asr schadeverzekering': 'ASR',
+  'asr levensverzekering': 'ASR',
+  'asr basis ziektekostenverzekeringen': 'ASR',
+  'asr aanvullende ziektekostenverzekeringen': 'ASR',
+  'asr zorgverzekeringen': 'ASR',
+  'ditzo': 'ASR',
+  'achmea': 'Achmea',
+  'achmea schadeverzekeringen': 'Achmea',
+  'achmea pensioen- en levensverzekeringen': 'Achmea',
+  'achmea zorgverzekeringen': 'Achmea',
+  'interpolis': 'Achmea',
+  'centraal beheer': 'Achmea',
+  'centraal beheer achmea': 'Achmea',
+  'fbto': 'Achmea',
+  'zilveren kruis': 'Achmea',
+  'zilveren kruis zorgverzekeringen': 'Achmea',
+  'avero achmea': 'Achmea',
+  'aegon': 'Aegon',
+  'aegon schadeverzekering': 'Aegon',
+  'aegon levensverzekering': 'Aegon',
+  'aegon spaarkas': 'Aegon',
+  'nationale-nederlanden': 'Nationale-Nederlanden',
+  'nationale nederlanden': 'Nationale-Nederlanden',
+  'nn': 'Nationale-Nederlanden',
+  'nn schadeverzekering': 'Nationale-Nederlanden',
+  'nn levensverzekering': 'Nationale-Nederlanden',
+  'das': 'DAS',
+  'das rechtsbijstand': 'DAS',
+  'das dutch legal protection': 'DAS',
+  'das nederlandse rechtsbijstand verzekeringmaatschappij': 'DAS',
+  'abn amro': 'ABN AMRO',
+  'abn amro bank': 'ABN AMRO',
+  'abn amro schadeverzekering': 'ABN AMRO',
+  'abn amro levensverzekering': 'ABN AMRO',
+  'abn amro verzekeringen': 'ABN AMRO',
+  'ing': 'ING',
+  'ing bank': 'ING',
+  'nn groep': 'Nationale-Nederlanden',
+  'delta lloyd': 'Nationale-Nederlanden',
+  'vivat': 'Vivat',
+  'reaal': 'Vivat',
+  'zwitserleven': 'Vivat',
+  'unigarant': 'Unigarant',
+  'allianz': 'Allianz',
+  'allianz nederland': 'Allianz',
+  'allianz benelux': 'Allianz',
+  'generali': 'Generali',
+  'generali nederland': 'Generali',
+  'generali schadeverzekering': 'Generali',
+  'chubb': 'Chubb',
+  'chubb european group': 'Chubb',
+  'arag': 'ARAG',
+  'arag rechtsbijstand': 'ARAG',
+  'arag se': 'ARAG',
+  'klaverblad': 'Klaverblad',
+  'klaverblad verzekeringen': 'Klaverblad',
+  'univé': 'Unive',
+  'unive': 'Unive',
+  'univé verzekeringen': 'Unive',
+  'bovemij': 'Bovemij',
+  'bovemij verzekeringen': 'Bovemij',
+  'de goudse': 'De Goudse',
+  'goudse verzekeringen': 'De Goudse',
+  'de goudse schadeverzekeringen': 'De Goudse',
+  'de goudse levensverzekeringen': 'De Goudse',
+  'menzis': 'Menzis',
+  'anderzorg': 'Menzis',
+  'cz': 'CZ',
+  'cz groep': 'CZ',
+  'cz zorgverzekeringen': 'CZ',
+  'ohra': 'CZ',
+  'ohra zorgverzekeringen': 'CZ',
+  'vgz': 'VGZ',
+  'cooperatie vgz': 'VGZ',
+  'iza zorgverzekeraar': 'VGZ',
+  'snp': 'SNP',
+  'tvm': 'TVM',
+  'tvm verzekeringen': 'TVM',
+  'zürich': 'Zurich',
+  'zurich': 'Zurich',
+  'zurich insurance': 'Zurich',
+  'hdi': 'HDI',
+  'hdi global': 'HDI'
+};
+
+function normalizeVerzekeraarnaam(name) {
+  if (!name) return '';
+  var cleaned = name.trim();
+
+  // Strip ", gevestigd te..." suffix
+  cleaned = cleaned.replace(/,\s*gevestigd\s+te\s+.*/i, '');
+
+  // Strip " h.o.d.n." and everything after
+  cleaned = cleaned.replace(/\s+h\.o\.d\.n\..*/i, '');
+
+  // Strip common legal suffixes for matching
+  var normalized = cleaned.replace(/\s+(n\.v\.|b\.v\.|nv|bv)\.?$/i, '').trim();
+
+  // Try lowercase lookup in group map
+  var lower = normalized.toLowerCase();
+  if (VERZEKERAAR_GROUP_MAP[lower]) return VERZEKERAAR_GROUP_MAP[lower];
+
+  // Try partial match: check if normalized name starts with a known key
+  var keys = Object.keys(VERZEKERAAR_GROUP_MAP);
+  for (var i = 0; i < keys.length; i++) {
+    if (lower.indexOf(keys[i]) === 0 || keys[i].indexOf(lower) === 0) {
+      return VERZEKERAAR_GROUP_MAP[keys[i]];
+    }
+  }
+
+  // Return cleaned name (with original casing from cleaned version)
+  return cleaned;
+}
+
+// Cache for insurer data
+var insurerDataCache = null;
+var insurerListCache = null;
+var selectedInsurer = null;
+
+function buildInsurerData() {
+  if (insurerDataCache && insurerDataCache._len === uitspraken.length) return insurerDataCache;
+
+  var data = {};
+  var marketTotals = { total: 0, afgewezen: 0, toegewezen: 0, deels: 0 };
+
+  uitspraken.forEach(function(u) {
+    if (!u.verzekeraar) return;
+    var name = normalizeVerzekeraarnaam(u.verzekeraar);
+    if (!name) return;
+
+    if (!data[name]) {
+      data[name] = { name: name, cases: [], total: 0, afgewezen: 0, toegewezen: 0, deels: 0 };
+    }
+    data[name].cases.push(u);
+    data[name].total++;
+    data[name][u.uitkomst || 'afgewezen']++;
+
+    marketTotals.total++;
+    marketTotals[u.uitkomst || 'afgewezen']++;
+  });
+
+  insurerDataCache = { insurers: data, market: marketTotals, _len: uitspraken.length };
+  insurerListCache = Object.keys(data).sort(function(a, b) { return data[b].total - data[a].total; });
+  return insurerDataCache;
+}
+
+function initInsurerTab() {
+  if (uitspraken.length === 0) return;
+  buildInsurerData();
+  // If already selected, re-render
+  if (selectedInsurer) {
+    renderInsurerAnalytics(selectedInsurer);
+  }
+}
+
+// ── Insurer Dropdown ──
+function showInsurerDropdown() {
+  filterInsurerDropdown(document.getElementById('insurerSearch').value);
+}
+
+function filterInsurerDropdown(query) {
+  buildInsurerData();
+  var dropdown = document.getElementById('insurerDropdown');
+  if (!insurerListCache || insurerListCache.length === 0) {
+    dropdown.innerHTML = '<div class="insurer-dropdown-item" style="color:var(--text-dim);">Geen data geladen</div>';
+    dropdown.style.display = 'block';
+    return;
+  }
+
+  var q = (query || '').toLowerCase().trim();
+  var filtered = insurerListCache.filter(function(name) {
+    return !q || name.toLowerCase().indexOf(q) !== -1;
+  }).slice(0, 20);
+
+  if (filtered.length === 0) {
+    dropdown.innerHTML = '<div class="insurer-dropdown-item" style="color:var(--text-dim);">Geen resultaten</div>';
+    dropdown.style.display = 'block';
+    return;
+  }
+
+  var data = insurerDataCache.insurers;
+  dropdown.innerHTML = filtered.map(function(name) {
+    var d = data[name];
+    var rejPct = d.total > 0 ? Math.round(d.afgewezen / d.total * 100) : 0;
+    return '<div class="insurer-dropdown-item" onclick="selectInsurer(\'' + name.replace(/'/g, "\\'") + '\')">' +
+      '<span class="insurer-dropdown-name">' + name + '</span>' +
+      '<span class="insurer-dropdown-meta">' + d.total + ' ' + t('insurer_n_cases') + ' &middot; ' + rejPct + '% ' + t('insurer_rej_pct') + '</span>' +
+    '</div>';
+  }).join('');
+  dropdown.style.display = 'block';
+}
+
+function selectInsurer(name) {
+  selectedInsurer = name;
+  document.getElementById('insurerSearch').value = name;
+  document.getElementById('insurerDropdown').style.display = 'none';
+  renderInsurerAnalytics(name);
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+  var wrap = document.querySelector('.insurer-search-wrap');
+  var dropdown = document.getElementById('insurerDropdown');
+  if (wrap && dropdown && !wrap.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
+});
+
+// ── Render full insurer analytics ──
+function renderInsurerAnalytics(name) {
+  var cache = buildInsurerData();
+  var d = cache.insurers[name];
+  var market = cache.market;
+  if (!d) return;
+
+  var contentEl = document.getElementById('insurerContent');
+  var rejPct = d.total > 0 ? Math.round(d.afgewezen / d.total * 100) : 0;
+  var grantPct = d.total > 0 ? Math.round(d.toegewezen / d.total * 100) : 0;
+  var partialPct = d.total > 0 ? Math.round(d.deels / d.total * 100) : 0;
+  var marketRejPct = market.total > 0 ? Math.round(market.afgewezen / market.total * 100) : 0;
+
+  // Date range
+  var dates = d.cases.map(function(u) { return u.datum || ''; }).filter(function(x) { return x; }).sort();
+  var dateRange = dates.length > 0 ? dates[0].substring(0, 4) + ' - ' + dates[dates.length - 1].substring(0, 4) : '-';
+
+  var rejDiff = rejPct - marketRejPct;
+  var rejDiffClass = rejDiff > 0 ? 'pro' : rejDiff < 0 ? 'con' : 'neutral';
+  var rejDiffLabel = rejDiff > 0 ? '+' + rejDiff + '% ' + t('insurer_worse_than_avg') : rejDiff < 0 ? rejDiff + '% ' + t('insurer_better_than_avg') : '= ' + t('insurer_market_avg');
+
+  var html = '';
+
+  // ── Header ──
+  html += '<div class="insurer-header">' +
+    '<div class="insurer-header-name">' + name + '</div>' +
+    '<div class="insurer-header-meta">' + d.total + ' ' + t('insurer_cases_period') + ' &middot; ' + dateRange + '</div>' +
+  '</div>';
+
+  // ── KPI cards ──
+  html += '<div class="insurer-kpi-grid">' +
+    '<div class="insurer-kpi">' +
+      '<div class="insurer-kpi-value">' + d.total + '</div>' +
+      '<div class="insurer-kpi-label">' + t('insurer_total_cases') + '</div>' +
+    '</div>' +
+    '<div class="insurer-kpi">' +
+      '<div class="insurer-kpi-value">' + rejPct + '%</div>' +
+      '<div class="insurer-kpi-label">' + t('insurer_rejection_rate') + '</div>' +
+      '<div class="insurer-kpi-delta ' + rejDiffClass + '">' + rejDiffLabel + '</div>' +
+    '</div>' +
+    '<div class="insurer-kpi">' +
+      '<div class="insurer-kpi-value" style="color:var(--green);">' + grantPct + '%</div>' +
+      '<div class="insurer-kpi-label">' + t('insurer_grant_rate') + '</div>' +
+    '</div>' +
+    '<div class="insurer-kpi">' +
+      '<div class="insurer-kpi-value" style="color:var(--amber);">' + partialPct + '%</div>' +
+      '<div class="insurer-kpi-label">' + t('insurer_partial_rate') + '</div>' +
+    '</div>' +
+  '</div>';
+
+  // ── Benchmark bar ──
+  html += '<div class="analysis-card insurer-section">' +
+    '<div class="analysis-card-header">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>' +
+      '<h3>' + t('insurer_benchmark_title') + '</h3>' +
+    '</div>' +
+    '<div class="insurer-benchmark">' +
+      '<div class="insurer-bench-row">' +
+        '<span class="insurer-bench-label">' + t('insurer_this_insurer') + '</span>' +
+        '<div class="insurer-bench-bar-wrap">' +
+          '<div class="insurer-bench-bar" style="width:' + rejPct + '%;background:' + (rejDiff > 5 ? 'var(--red)' : rejDiff < -5 ? 'var(--green)' : 'var(--primary)') + ';"></div>' +
+        '</div>' +
+        '<span class="insurer-bench-value">' + rejPct + '%</span>' +
+      '</div>' +
+      '<div class="insurer-bench-row">' +
+        '<span class="insurer-bench-label">' + t('insurer_market_avg') + '</span>' +
+        '<div class="insurer-bench-bar-wrap">' +
+          '<div class="insurer-bench-bar" style="width:' + marketRejPct + '%;background:var(--text-dim);opacity:0.5;"></div>' +
+        '</div>' +
+        '<span class="insurer-bench-value">' + marketRejPct + '%</span>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
+  // ── Per verzekeringtype breakdown ──
+  var typeBreakdown = {};
+  d.cases.forEach(function(u) {
+    var tp = u.type_verzekering || 'overig';
+    if (!typeBreakdown[tp]) typeBreakdown[tp] = { total: 0, afgewezen: 0, toegewezen: 0, deels: 0 };
+    typeBreakdown[tp].total++;
+    typeBreakdown[tp][u.uitkomst || 'afgewezen']++;
+  });
+  var sortedTypes = Object.keys(typeBreakdown).sort(function(a, b) { return typeBreakdown[b].total - typeBreakdown[a].total; });
+
+  // Market breakdown for comparison
+  var marketTypeBreakdown = {};
+  uitspraken.forEach(function(u) {
+    if (!u.verzekeraar) return;
+    var tp = u.type_verzekering || 'overig';
+    if (!marketTypeBreakdown[tp]) marketTypeBreakdown[tp] = { total: 0, afgewezen: 0 };
+    marketTypeBreakdown[tp].total++;
+    if (u.uitkomst === 'afgewezen') marketTypeBreakdown[tp].afgewezen++;
+  });
+
+  html += '<div class="analysis-card insurer-section">' +
+    '<div class="analysis-card-header">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>' +
+      '<h3>' + t('insurer_type_breakdown') + '</h3>' +
+    '</div>' +
+    '<div class="insurer-table-wrap">' +
+    '<table class="insurer-table">' +
+      '<thead><tr>' +
+        '<th>' + t('insurer_col_type') + '</th>' +
+        '<th>' + t('insurer_col_n') + '</th>' +
+        '<th>' + t('insurer_col_rejected') + '</th>' +
+        '<th>' + t('insurer_col_granted') + '</th>' +
+        '<th>' + t('insurer_col_partial') + '</th>' +
+      '</tr></thead><tbody>' +
+      sortedTypes.map(function(tp) {
+        var c = typeBreakdown[tp];
+        var tRej = c.total > 0 ? Math.round(c.afgewezen / c.total * 100) : 0;
+        var tGrant = c.total > 0 ? Math.round(c.toegewezen / c.total * 100) : 0;
+        var tPartial = c.total > 0 ? Math.round(c.deels / c.total * 100) : 0;
+        var mktData = marketTypeBreakdown[tp];
+        var mktRej = mktData && mktData.total > 0 ? Math.round(mktData.afgewezen / mktData.total * 100) : 0;
+        var worse = tRej > mktRej + 5;
+        return '<tr' + (worse ? ' class="insurer-row-risk"' : '') + '>' +
+          '<td>' + tp + '</td>' +
+          '<td>' + c.total + '</td>' +
+          '<td>' + tRej + '%</td>' +
+          '<td>' + tGrant + '%</td>' +
+          '<td>' + tPartial + '%</td>' +
+        '</tr>';
+      }).join('') +
+    '</tbody></table></div>' +
+  '</div>';
+
+  // ── Top geschiltypen ──
+  var disputeBreakdown = {};
+  d.cases.forEach(function(u) {
+    var kg = u.kerngeschil || 'overig';
+    if (!disputeBreakdown[kg]) disputeBreakdown[kg] = { total: 0, afgewezen: 0 };
+    disputeBreakdown[kg].total++;
+    if (u.uitkomst === 'afgewezen') disputeBreakdown[kg].afgewezen++;
+  });
+  var sortedDisputes = Object.keys(disputeBreakdown).sort(function(a, b) { return disputeBreakdown[b].total - disputeBreakdown[a].total; }).slice(0, 8);
+
+  html += '<div class="analysis-card insurer-section">' +
+    '<div class="analysis-card-header">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+      '<h3>' + t('insurer_top_disputes') + '</h3>' +
+    '</div>' +
+    '<ul class="factor-list">' +
+    sortedDisputes.map(function(kg) {
+      var c = disputeBreakdown[kg];
+      var pct = c.total > 0 ? Math.round(c.afgewezen / c.total * 100) : 0;
+      return '<li><span>' + kg.replace(/_/g, ' ') + ' <span style="color:var(--text-dim);font-size:11px;">(n=' + c.total + ')</span></span><span class="factor-tag ' + (pct > 85 ? 'pro' : pct < 75 ? 'con' : 'neutral') + '">' + pct + '% afw.</span></li>';
+    }).join('') +
+    '</ul>' +
+  '</div>';
+
+  // ── Trend over jaren ──
+  var yearData = {};
+  d.cases.forEach(function(u) {
+    var y = (u.datum || '').substring(0, 4);
+    if (!y || y.length !== 4) return;
+    if (!yearData[y]) yearData[y] = { total: 0, afgewezen: 0 };
+    yearData[y].total++;
+    if (u.uitkomst === 'afgewezen') yearData[y].afgewezen++;
+  });
+  var years = Object.keys(yearData).sort();
+
+  if (years.length >= 2) {
+    var maxYearN = 0;
+    years.forEach(function(y) { if (yearData[y].total > maxYearN) maxYearN = yearData[y].total; });
+
+    html += '<div class="analysis-card insurer-section">' +
+      '<div class="analysis-card-header">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' +
+        '<h3>' + t('insurer_trend_title') + '</h3>' +
+      '</div>' +
+      '<div class="insurer-table-wrap"><table class="insurer-table">' +
+        '<thead><tr><th>' + t('insurer_year') + '</th><th>' + t('insurer_n_cases') + '</th><th>' + t('insurer_rej_pct') + '</th><th></th></tr></thead>' +
+        '<tbody>' +
+        years.map(function(y) {
+          var yd = yearData[y];
+          var yRej = yd.total > 0 ? Math.round(yd.afgewezen / yd.total * 100) : 0;
+          var barW = yd.total > 0 ? Math.round(yd.total / maxYearN * 100) : 0;
+          return '<tr><td>' + y + '</td><td>' + yd.total + '</td><td>' + yRej + '%</td>' +
+            '<td><div class="insurer-mini-bar" style="width:' + barW + '%;background:' + (yRej > marketRejPct + 5 ? 'var(--red)' : yRej < marketRejPct - 5 ? 'var(--green)' : 'var(--primary)') + ';"></div></td></tr>';
+        }).join('') +
+      '</tbody></table></div>' +
+    '</div>';
+  }
+
+  // ── Risicogebieden ──
+  var riskAreas = [];
+  sortedTypes.forEach(function(tp) {
+    var c = typeBreakdown[tp];
+    if (c.total < 3) return;
+    var insRej = Math.round(c.afgewezen / c.total * 100);
+    var mktData = marketTypeBreakdown[tp];
+    var mktRej = mktData && mktData.total >= 5 ? Math.round(mktData.afgewezen / mktData.total * 100) : null;
+    if (mktRej !== null && insRej < mktRej - 5) {
+      riskAreas.push({ type: tp, insRej: insRej, mktRej: mktRej, diff: mktRej - insRej, n: c.total });
+    }
+  });
+  riskAreas.sort(function(a, b) { return b.diff - a.diff; });
+
+  html += '<div class="analysis-card insurer-section">' +
+    '<div class="analysis-card-header">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+      '<h3>' + t('insurer_risk_areas') + '</h3>' +
+    '</div>' +
+    '<p class="analysis-card-desc">' + t('insurer_risk_desc') + '</p>';
+
+  if (riskAreas.length > 0) {
+    html += '<ul class="factor-list">' +
+      riskAreas.map(function(r) {
+        return '<li class="insurer-risk-item">' +
+          '<span>' + r.type + ' <span style="color:var(--text-dim);font-size:11px;">(n=' + r.n + ')</span></span>' +
+          '<span><span class="factor-tag con">' + r.insRej + '% vs. ' + r.mktRej + '% mkt</span> <span style="font-size:11px;color:var(--red);font-weight:600;">-' + r.diff + '%</span></span>' +
+        '</li>';
+      }).join('') +
+    '</ul>';
+  } else {
+    html += '<p style="font-size:14px;color:var(--green);padding:12px 0;">' + t('insurer_no_risk') + '</p>';
+  }
+  html += '</div>';
+
+  contentEl.innerHTML = html;
 }

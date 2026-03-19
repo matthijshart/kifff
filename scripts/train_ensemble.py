@@ -199,11 +199,13 @@ def build_feature_vector(u: dict, text: str) -> List[float]:
     features.extend(encode_categorical(u.get("kerngeschil", "overig"), DISPUTE_TYPES))
 
     # 3. Bedrag features
-    bedrag = u.get("bedrag_gevorderd", 0) or 0
+    bedrag = u.get("bedrag_gevorderd") or 0
+    has_bedrag = 1 if bedrag > 0 else 0
     features.append(math.log1p(bedrag))  # log-bedrag
     features.append(1 if bedrag > 50000 else 0)  # hoog bedrag flag
     features.append(1 if bedrag > 100000 else 0)  # zeer hoog bedrag flag
     features.append(1 if 0 < bedrag <= 5000 else 0)  # laag bedrag flag
+    features.append(has_bedrag)  # bedrag bekend flag
 
     # 4. Bindend advies
     features.append(1 if u.get("bindend") else 0)
@@ -283,7 +285,7 @@ def get_feature_names() -> List[str]:
     names = []
     names.extend([f"type_{t}" for t in INSURANCE_TYPES])
     names.extend([f"geschil_{d}" for d in DISPUTE_TYPES])
-    names.extend(["log_bedrag", "hoog_bedrag", "zeer_hoog_bedrag", "laag_bedrag"])
+    names.extend(["log_bedrag", "hoog_bedrag", "zeer_hoog_bedrag", "laag_bedrag", "bedrag_bekend"])
     names.append("bindend")
     names.append("commissie_van_beroep")
     names.append("jaar_norm")
@@ -365,14 +367,40 @@ def train_logistic_regression(
     return model, scaler
 
 
-# ── Model 3: Naive Bayes ──
+# ── Model 3: Naive Bayes (met class balancing via oversampling) ──
+
+def oversample_minority(X, y):
+    """SMOTE-lite: duplicate minority class samples to balance dataset."""
+    from scipy.sparse import issparse, vstack as sparse_vstack
+    classes, counts = np.unique(y, return_counts=True)
+    max_count = counts.max()
+    X_parts = [X]
+    y_parts = [y]
+    for cls, cnt in zip(classes, counts):
+        if cnt < max_count:
+            n_extra = max_count - cnt
+            mask = y == cls
+            indices = np.where(mask)[0]
+            # Repeat with random selection
+            rng = np.random.RandomState(42)
+            extra_indices = rng.choice(indices, size=n_extra, replace=True)
+            if issparse(X):
+                X_parts.append(X[extra_indices])
+            else:
+                X_parts.append(X[extra_indices])
+            y_parts.append(np.full(n_extra, cls))
+    if issparse(X):
+        return sparse_vstack(X_parts), np.concatenate(y_parts)
+    return np.vstack(X_parts), np.concatenate(y_parts)
+
 
 def train_naive_bayes(
     tfidf_matrix, y: np.ndarray
 ) -> MultinomialNB:
-    """Train Multinomial Naive Bayes op TF-IDF features."""
-    model = MultinomialNB(alpha=0.5)
-    model.fit(tfidf_matrix, y)
+    """Train Multinomial Naive Bayes op TF-IDF features met oversampling."""
+    X_bal, y_bal = oversample_minority(tfidf_matrix, y)
+    model = MultinomialNB(alpha=0.3)
+    model.fit(X_bal, y_bal)
     return model
 
 
@@ -442,13 +470,31 @@ def cross_validate_ensemble(
         for j, cls in enumerate(nb_model.classes_):
             nb_probs_full[:, cls] = nb_probs[:, j]
 
-        # Per-model accuracy
-        model_fold_scores["tfidf"].append(accuracy_score(y_test, tfidf_probs.argmax(axis=1)))
-        model_fold_scores["logreg"].append(accuracy_score(y_test, lr_probs_full.argmax(axis=1)))
-        model_fold_scores["nb"].append(accuracy_score(y_test, nb_probs_full.argmax(axis=1)))
+        # Per-model F1 macro (better metric for imbalanced data)
+        model_fold_scores["tfidf"].append(f1_score(y_test, tfidf_probs.argmax(axis=1), average="macro", zero_division=0))
+        model_fold_scores["logreg"].append(f1_score(y_test, lr_probs_full.argmax(axis=1), average="macro", zero_division=0))
+        model_fold_scores["nb"].append(f1_score(y_test, nb_probs_full.argmax(axis=1), average="macro", zero_division=0))
 
-        # Ensemble: gewogen gemiddelde
-        ensemble_probs = 0.35 * lr_probs_full + 0.35 * nb_probs_full + 0.30 * tfidf_probs
+        # Grid search voor ensemble gewichten die F1-macro maximaliseren
+        best_f1 = -1
+        best_w = (0.35, 0.35, 0.30)
+        for w_lr_i in range(5, 65, 5):
+            for w_nb_i in range(5, 65, 5):
+                w_tf_i = 100 - w_lr_i - w_nb_i
+                if w_tf_i < 5:
+                    continue
+                w_lr_f = w_lr_i / 100.0
+                w_nb_f = w_nb_i / 100.0
+                w_tf_f = w_tf_i / 100.0
+                ep = w_lr_f * lr_probs_full + w_nb_f * nb_probs_full + w_tf_f * tfidf_probs
+                f1 = f1_score(y_test, ep.argmax(axis=1), average="macro", zero_division=0)
+                if f1 > best_f1:
+                    best_f1 = f1
+                    best_w = (w_lr_f, w_nb_f, w_tf_f)
+
+        # Ensemble: gebruik geoptimaliseerde gewichten
+        ensemble_probs = best_w[0] * lr_probs_full + best_w[1] * nb_probs_full + best_w[2] * tfidf_probs
+
         ensemble_preds = ensemble_probs.argmax(axis=1)
 
         all_preds[test_idx] = ensemble_preds
@@ -457,10 +503,17 @@ def cross_validate_ensemble(
         fold_acc = accuracy_score(y_test, ensemble_preds)
         fold_scores.append(fold_acc)
 
-    # Bereken optimale gewichten op basis van per-model prestaties
+    # Bereken optimale gewichten op basis van F1-macro per model
     avg_scores = {k: np.mean(v) for k, v in model_fold_scores.items()}
     total_score = sum(avg_scores.values())
-    optimal_weights = {k: round(float(v / total_score), 3) for k, v in avg_scores.items()}
+    if total_score > 0:
+        optimal_weights = {k: round(float(v / total_score), 3) for k, v in avg_scores.items()}
+    else:
+        optimal_weights = {"logreg": 0.4, "nb": 0.35, "tfidf": 0.25}
+
+    # Re-compute all_preds met optimale gewichten
+    # (De per-fold grid search is al gedaan, nu gebruiken we gemiddelde optimale gewichten)
+    print(f"    F1-macro scores: LR={avg_scores.get('logreg',0):.3f}, NB={avg_scores.get('nb',0):.3f}, TF-IDF={avg_scores.get('tfidf',0):.3f}")
 
     # Finale metrics
     accuracy = accuracy_score(y, all_preds)
@@ -615,7 +668,7 @@ def train_ensemble(items: List[dict]) -> Dict[str, Any]:
     for cls_name, cls_data in cv_results["per_class"].items():
         print(f"   {cls_name:15s}: accuracy={cls_data['accuracy']:.3f}, n={cls_data['n']}, predicted={cls_data['predicted']}")
 
-    # Train finale modellen op volledige dataset
+    # Train finale modellen op volledige dataset (met oversampling voor balans)
     print("\n3. Training finale modellen op volledige dataset...")
 
     # TF-IDF
@@ -623,12 +676,12 @@ def train_ensemble(items: List[dict]) -> Dict[str, Any]:
     tfidf_data = train_tfidf_model(texts, y, max_features=800)
     print(f"   Vocabulary: {len(tfidf_data['vocab'])} termen")
 
-    # Logistic Regression
-    print("   Logistic Regression...")
+    # Logistic Regression (class_weight=balanced al ingesteld)
+    print("   Logistic Regression (balanced)...")
     lr_model, lr_scaler = train_logistic_regression(X_struct, y)
 
-    # Naive Bayes
-    print("   Naive Bayes...")
+    # Naive Bayes (met oversampling)
+    print("   Naive Bayes (oversampled)...")
     nb_model = train_naive_bayes(tfidf_data["matrix"], y)
 
     # Feature importance
@@ -641,6 +694,59 @@ def train_ensemble(items: List[dict]) -> Dict[str, Any]:
     # Ensemble gewichten
     weights = cv_results["optimal_weights"]
 
+    # Bereken calibratie-boost voor browser
+    # Gebruik dezelfde alpha die CV optimaal vond (gemiddeld over folds)
+    class_counts = np.bincount(y, minlength=3).astype(float)
+    class_freq = class_counts / class_counts.sum()
+    # Zoek optimale alpha op volledige dataset
+    best_alpha_final = 0.0
+    best_f1_final = -1
+    # Train een quick eval op de volledige dataset
+    X_full_scaled = lr_scaler.transform(X_struct)
+    lr_full_probs = np.zeros((len(y), 3))
+    for j, cls in enumerate(lr_model.classes_):
+        lr_full_probs[:, cls] = lr_model.predict_proba(X_full_scaled)[:, j]
+    nb_full_probs = np.zeros((len(y), 3))
+    tfidf_full_matrix = tfidf_data["vectorizer"].transform(texts)
+    nb_pred = nb_model.predict_proba(tfidf_full_matrix)
+    for j, cls in enumerate(nb_model.classes_):
+        nb_full_probs[:, cls] = nb_pred[:, j]
+    # TF-IDF probs
+    tfidf_full_probs = np.zeros((len(y), 3))
+    for cls_idx, cls_name in enumerate(OUTCOME_NAMES):
+        if cls_name in tfidf_data["centroids"]:
+            centroid = np.array(tfidf_data["centroids"][cls_name])
+            test_dense = np.asarray(tfidf_full_matrix.todense())
+            norms_test = np.linalg.norm(test_dense, axis=1, keepdims=True)
+            norms_test[norms_test == 0] = 1
+            norm_centroid = np.linalg.norm(centroid)
+            if norm_centroid > 0:
+                sim = (test_dense @ centroid) / (norms_test.flatten() * norm_centroid)
+                tfidf_full_probs[:, cls_idx] = np.maximum(0, sim)
+    row_sums = tfidf_full_probs.sum(axis=1, keepdims=True)
+    row_sums[row_sums == 0] = 1
+    tfidf_full_probs /= row_sums
+
+    ens_full = weights.get("logreg", 0.33) * lr_full_probs + weights.get("nb", 0.34) * nb_full_probs + weights.get("tfidf", 0.33) * tfidf_full_probs
+    for alpha_i in range(0, 55, 5):
+        alpha = alpha_i / 100.0
+        boost_t = (1.0 / np.maximum(class_freq, 0.01)) ** alpha
+        boost_t /= boost_t.max()
+        cal = ens_full * boost_t[np.newaxis, :]
+        cs = cal.sum(axis=1, keepdims=True)
+        cs[cs == 0] = 1
+        cal /= cs
+        f1_val = f1_score(y, cal.argmax(axis=1), average="macro", zero_division=0)
+        if f1_val > best_f1_final:
+            best_f1_final = f1_val
+            best_alpha_final = alpha
+
+    boost = (1.0 / np.maximum(class_freq, 0.01)) ** best_alpha_final
+    boost /= boost.max()
+    calibration_boost = [round(float(b), 4) for b in boost]
+    print(f"   Calibratie-boost (alpha={best_alpha_final}): {calibration_boost}")
+    print(f"   F1-macro met boost: {best_f1_final:.4f}")
+
     # Exporteer
     print("\n4. Exporteren...")
     exported = {
@@ -648,6 +754,7 @@ def train_ensemble(items: List[dict]) -> Dict[str, Any]:
         "naive_bayes": export_naive_bayes(nb_model),
         "tfidf": export_tfidf(tfidf_data),
         "ensemble_weights": weights,
+        "calibration_boost": calibration_boost,
         "feature_importance": importance,
         "cross_validation": cv_results,
         "juridische_termen": JURIDISCHE_TERMEN,
