@@ -23,7 +23,7 @@
     <button class="nav-link" onclick="scrollToSection('tool-section')" data-i18n="nav_risk">Risico-inschatting</button>
     <button class="nav-link" onclick="switchTab('insights'); scrollToSection('tool-section');" data-i18n="nav_insights">Inzichten</button>
     <button class="nav-link" onclick="switchTab('insurer'); scrollToSection('tool-section');" data-i18n="nav_insurer">Mijn Verzekeraar</button>
-    <button class="nav-link" onclick="scrollToSection('pricing')" data-i18n="nav_pricing">Kosten</button>
+    <button class="nav-link" onclick="scrollToSection('pricing')" data-i18n="nav_pricing">Oplossingen</button>
     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Wissel thema" id="themeToggle">
       <svg id="iconSun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       <svg id="iconMoon" width="18" height="18" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -147,145 +147,164 @@
   </div>
 </section>
 
-<!-- Pricing -->
+<!-- Pricing / Oplossingen -->
 <section class="pricing-section" id="pricing">
   <div class="pricing-inner">
     <div style="text-align:center;">
-      <div class="section-eyebrow" data-i18n="pricing_eyebrow">Kosten</div>
-      <h2 class="section-title" data-i18n="pricing_title">Transparante prijzen, geen verrassingen</h2>
-      <p class="section-desc" style="margin-left:auto;margin-right:auto;" data-i18n="pricing_desc">Start gratis en schaal op wanneer u klaar bent. Geen verplichtingen, geen verborgen kosten.</p>
+      <div class="section-eyebrow" data-i18n="pricing_eyebrow">Oplossingen</div>
+      <h2 class="section-title" data-i18n="pricing_title">Passend bij uw organisatie</h2>
+      <p class="section-desc" style="margin-left:auto;margin-right:auto;" data-i18n="pricing_desc">Elk traject begint met een kennismaking. Wij stemmen de oplossing af op uw werkprocessen, systemen en volume.</p>
     </div>
 
     <div class="pricing-grid">
-      <!-- Free -->
+      <!-- Pilot -->
       <div class="pricing-card">
         <div class="pricing-card-header">
           <div class="pricing-icon pricing-icon-free">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
-          <div class="pricing-plan" data-i18n="pricing_free_name">Gratis</div>
-          <div class="pricing-plan-desc" data-i18n="pricing_free_desc">Ontdek de kracht van datagedreven risico-inschatting</div>
+          <div class="pricing-plan" data-i18n="pricing_pilot_name">Pilot</div>
+          <div class="pricing-plan-desc" data-i18n="pricing_pilot_desc">Ervaar de meerwaarde met een begeleid proeftraject binnen uw schadeteam</div>
         </div>
         <div class="pricing-price">
-          <span class="pricing-amount">&euro;0</span>
-          <span class="pricing-period" data-i18n="pricing_period_month">/maand</span>
+          <span class="pricing-amount pricing-custom" data-i18n="pricing_pilot_price">Gratis proefperiode</span>
         </div>
         <ul class="pricing-features">
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_free_f1">5 risico-analyses per maand</span>
+            <span data-i18n="pricing_pilot_f1">4 weken begeleide pilot</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_free_f2">Toegang tot data-inzichten</span>
+            <span data-i18n="pricing_pilot_f2">Risico-analyses &amp; vergelijkbare uitspraken</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_free_f3">Basis vergelijkbare uitspraken</span>
+            <span data-i18n="pricing_pilot_f3">Evaluatierapport met ROI-analyse</span>
           </li>
-          <li class="pricing-feature-disabled">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            <span data-i18n="pricing_free_f4">Geen PDF-analyse</span>
-          </li>
-          <li class="pricing-feature-disabled">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            <span data-i18n="pricing_free_f5">Geen verzekeraar-analytics</span>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span data-i18n="pricing_pilot_f4">Persoonlijke onboarding</span>
           </li>
         </ul>
-        <button class="pricing-btn pricing-btn-outline" onclick="scrollToSection('tool-section')" data-i18n="pricing_free_cta">Gratis starten</button>
+        <button class="pricing-btn pricing-btn-outline" data-i18n="pricing_pilot_cta">Pilot aanvragen</button>
       </div>
 
-      <!-- Professional (highlighted) -->
+      <!-- Integratie (highlighted) -->
       <div class="pricing-card pricing-card-popular">
         <div class="pricing-badge" data-i18n="pricing_popular">Meest gekozen</div>
         <div class="pricing-card-header">
           <div class="pricing-icon pricing-icon-pro">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           </div>
-          <div class="pricing-plan" data-i18n="pricing_pro_name">Professional</div>
-          <div class="pricing-plan-desc" data-i18n="pricing_pro_desc">Voor juristen en schadeteams die dagelijks analyseren</div>
+          <div class="pricing-plan" data-i18n="pricing_integ_name">Integratie</div>
+          <div class="pricing-plan-desc" data-i18n="pricing_integ_desc">Naadloos gekoppeld aan uw schadebeheer- en klachtsystemen</div>
         </div>
         <div class="pricing-price">
-          <span class="pricing-amount">&euro;89</span>
-          <span class="pricing-period" data-i18n="pricing_period_month">/maand</span>
+          <span class="pricing-amount pricing-custom" data-i18n="pricing_integ_price">In overleg</span>
         </div>
-        <div class="pricing-price-note" data-i18n="pricing_pro_annual">of &euro;69/maand bij jaarabonnement</div>
+        <div class="pricing-price-note" data-i18n="pricing_integ_note">Licentie op basis van volume en scope</div>
         <ul class="pricing-features">
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_pro_f1">Onbeperkte risico-analyses</span>
+            <span data-i18n="pricing_integ_f1">API-koppeling met uw bestaande systemen</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_pro_f2">PDF polisvoorwaarden scannen</span>
+            <span data-i18n="pricing_integ_f2">Onbeperkte analyses voor uw hele team</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_pro_f3">Verzekeraar-analytics &amp; benchmarks</span>
+            <span data-i18n="pricing_integ_f3">Polisvoorwaarden-scanner (PDF/API)</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_pro_f4">Uitgebreide vergelijkbare uitspraken</span>
+            <span data-i18n="pricing_integ_f4">Verzekeraar-analytics &amp; benchmarks</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_pro_f5">Exporteerbare rapporten</span>
+            <span data-i18n="pricing_integ_f5">SSO en rolgebaseerde toegang</span>
           </li>
         </ul>
-        <button class="pricing-btn pricing-btn-primary" data-i18n="pricing_pro_cta">Start 14 dagen gratis</button>
+        <button class="pricing-btn pricing-btn-primary" data-i18n="pricing_integ_cta">Plan een gesprek</button>
       </div>
 
-      <!-- Enterprise -->
+      <!-- Enterprise / Maatwerkoplossing -->
       <div class="pricing-card">
         <div class="pricing-card-header">
           <div class="pricing-icon pricing-icon-ent">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
-          <div class="pricing-plan" data-i18n="pricing_ent_name">Enterprise</div>
-          <div class="pricing-plan-desc" data-i18n="pricing_ent_desc">Voor verzekeraars en grote advocatenkantoren</div>
+          <div class="pricing-plan" data-i18n="pricing_ent_name">Maatwerkoplossing</div>
+          <div class="pricing-plan-desc" data-i18n="pricing_ent_desc">Voor organisaties die maximale controle en eigen modellen willen</div>
         </div>
         <div class="pricing-price">
-          <span class="pricing-amount pricing-custom" data-i18n="pricing_ent_price">Op maat</span>
+          <span class="pricing-amount pricing-custom" data-i18n="pricing_ent_price">In overleg</span>
         </div>
         <ul class="pricing-features">
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_ent_f1">Alles in Professional</span>
+            <span data-i18n="pricing_ent_f1">Custom modellen getraind op uw eigen data</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_ent_f2">API-toegang voor integratie</span>
+            <span data-i18n="pricing_ent_f2">On-premise of private cloud hosting</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_ent_f3">Meerdere gebruikersaccounts</span>
+            <span data-i18n="pricing_ent_f3">Dedicated customer success manager</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_ent_f4">Dedicated support &amp; onboarding</span>
+            <span data-i18n="pricing_ent_f4">SLA met gegarandeerde uptime</span>
           </li>
           <li>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="pricing_ent_f5">Custom modellen op uw data</span>
+            <span data-i18n="pricing_ent_f5">Juridische compliance-ondersteuning</span>
           </li>
         </ul>
         <button class="pricing-btn pricing-btn-outline" data-i18n="pricing_ent_cta">Neem contact op</button>
       </div>
     </div>
 
-    <!-- FAQ-style trust elements -->
-    <div class="pricing-trust">
-      <div class="pricing-trust-item">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        <span data-i18n="pricing_trust1">14 dagen gratis proberen</span>
+    <!-- Trust / process -->
+    <div class="pricing-process">
+      <div class="pricing-process-step">
+        <div class="pricing-process-num">1</div>
+        <div>
+          <strong data-i18n="pricing_step1_title">Kennismakingsgesprek</strong>
+          <span data-i18n="pricing_step1_desc">We bespreken uw situatie en wensen</span>
+        </div>
       </div>
-      <div class="pricing-trust-item">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        <span data-i18n="pricing_trust2">Maandelijks opzegbaar</span>
+      <div class="pricing-process-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
-      <div class="pricing-trust-item">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        <span data-i18n="pricing_trust3">Geen creditcard nodig voor gratis plan</span>
+      <div class="pricing-process-step">
+        <div class="pricing-process-num">2</div>
+        <div>
+          <strong data-i18n="pricing_step2_title">Pilot of demo</strong>
+          <span data-i18n="pricing_step2_desc">Ervaar de meerwaarde in de praktijk</span>
+        </div>
+      </div>
+      <div class="pricing-process-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="pricing-process-step">
+        <div class="pricing-process-num">3</div>
+        <div>
+          <strong data-i18n="pricing_step3_title">Voorstel op maat</strong>
+          <span data-i18n="pricing_step3_desc">Prijs afgestemd op volume en integratie</span>
+        </div>
+      </div>
+      <div class="pricing-process-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="pricing-process-step">
+        <div class="pricing-process-num">4</div>
+        <div>
+          <strong data-i18n="pricing_step4_title">Implementatie</strong>
+          <span data-i18n="pricing_step4_desc">Koppeling met uw systemen en training</span>
+        </div>
       </div>
     </div>
   </div>
