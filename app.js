@@ -102,7 +102,10 @@ function switchTab(tab) {
 // ── Auto-load Dataset ──
 async function autoLoadDataset() {
   try {
-    var response = await fetch('data/uitspraken/dataset.json');
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 15000);
+    var response = await fetch('data/uitspraken/dataset.json', { signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!response.ok) return;
     var data = await response.json();
     uitspraken = data.uitspraken || [];
@@ -120,7 +123,14 @@ async function autoLoadDataset() {
     }
     var loadBtn = document.querySelector('[onclick="loadFullDataset()"]');
     if (loadBtn) loadBtn.textContent = 'Herladen (' + uitspraken.length + ')';
-  } catch (e) {}
+  } catch (e) {
+    console.error('Dataset laden mislukt:', e);
+    var statusEl = document.getElementById('dataStatus');
+    if (statusEl) {
+      statusEl.className = 'data-status error';
+      statusEl.textContent = 'Dataset laden mislukt: ' + (e.name === 'AbortError' ? 'timeout' : e.message);
+    }
+  }
 }
 
 function updateHeroStats() {
@@ -640,7 +650,10 @@ async function handlePolicyUpload(event) {
   formData.append('file', file);
 
   try {
-    var resp = await fetch('/api/analyze-policy', { method: 'POST', body: formData });
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 120000); // 2 minuten timeout
+    var resp = await fetch('/api/analyze-policy', { method: 'POST', body: formData, signal: controller.signal });
+    clearTimeout(timeoutId);
     var data = await resp.json();
 
     if (data.error) {
@@ -684,7 +697,13 @@ async function handlePolicyUpload(event) {
       if (opt) typeSelect.value = opt.value;
     }
   } catch (err) {
-    resultEl.innerHTML = '<div style="padding:12px 16px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--radius);font-size:13px;color:var(--red);">Server niet bereikbaar. Start: python3 scripts/server.py</div>';
+    var errorMsg = 'Server niet bereikbaar. Start: python3 scripts/server.py';
+    if (err.name === 'AbortError') {
+      errorMsg = 'Analyse timeout (>2 min). Het PDF-bestand is mogelijk te groot. Probeer een kleiner bestand.';
+    } else if (err.message && err.message.includes('Failed to fetch')) {
+      errorMsg = 'Connectie verloren. Controleer of de server draait: python3 scripts/server.py';
+    }
+    resultEl.innerHTML = '<div style="padding:12px 16px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--radius);font-size:13px;color:var(--red);">' + errorMsg + '</div>';
     zone.style.borderColor = 'var(--border)';
     zone.style.background = '';
     label.innerHTML = '<strong style="color:var(--text-secondary);">Klik om opnieuw te uploaden</strong>';

@@ -132,11 +132,12 @@ def analyze_policy():
         pdf_bytes = file.read()
         pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
 
-        # Send to Claude
+        # Send to Claude with timeout
         client = get_client()
         response = client.messages.create(
             model=MODEL,
             max_tokens=MAX_TOKENS,
+            timeout=90.0,  # 90 second timeout for API call
             system="Je bent een juridisch AI-assistent gespecialiseerd in Nederlandse verzekeringspolissen en KIFID-geschillen. Je bent nauwkeurig, objectief en volledig.",
             messages=[
                 {
@@ -180,6 +181,8 @@ def analyze_policy():
         return jsonify({"error": "Claude gaf geen valide JSON terug", "details": str(e)}), 500
     except RuntimeError as e:
         return jsonify({"error": str(e)}), 500
+    except TimeoutError:
+        return jsonify({"error": "Claude API timeout — het PDF-bestand is mogelijk te groot"}), 504
     except Exception as e:
         return jsonify({"error": "Analyse mislukt", "details": str(e)}), 500
 
